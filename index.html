@@ -11,12 +11,28 @@ h1{font-size:1.4em}
 h2{font-size:1.15em;margin:0 0 14px}
 h3{font-size:1.02em;margin:20px 0 10px}
 .card{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.option{display:block;padding:12px 14px;border:2px solid #ddd;border-radius:8px;margin-bottom:10px;cursor:pointer;user-select:none}
-.option:hover{border-color:#888}
+/* НОВЫЙ ПРОЦЕСС ВЫБОРА — плитки */
+.option{
+  display:block;padding:14px 18px;border:2px solid #ddd;border-radius:10px;
+  margin-bottom:10px;cursor:pointer;user-select:none;
+  transition:all .15s;background:#fff;font-size:1em;
+  position:relative;padding-left:52px
+}
+.option::before{
+  content:attr(data-letter);
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:50%;background:#f1f5f9;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.9em;color:#64748b;transition:all .15s
+}
+.option:hover{border-color:#94a3b8;background:#f8fafc}
 .option.selected{border-color:#00AAFF;background:#eff9ff}
+.option.selected::before{background:#00AAFF;color:#fff}
 .option.correct{border-color:#16a34a;background:#f0fdf4}
+.option.correct::before{background:#16a34a;color:#fff;content:'✓'}
 .option.wrong{border-color:#dc2626;background:#fef2f2}
-.option input{margin-right:10px}
+.option.wrong::before{background:#dc2626;color:#fff;content:'✕'}
+.option.disabled{cursor:not-allowed}
 button{padding:10px 20px;font-size:1em;border:none;border-radius:8px;background:#00AAFF;color:#fff;cursor:pointer;font-weight:600}
 button:hover{background:#0090db}
 button:disabled{background:#94a3b8;cursor:not-allowed}
@@ -26,7 +42,7 @@ button.danger{background:#dc2626}
 button.danger:hover{background:#b91c1c}
 button.small{padding:6px 12px;font-size:.85em}
 .hidden{display:none!important}
-.toolbar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.toolbar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
 .question-text{font-size:1.15em;font-weight:600;margin-bottom:14px}
 .q-image{max-width:100%;max-height:300px;border-radius:8px;margin-bottom:14px;display:block;border:1px solid #e2e8f0}
 .progress{font-size:.9em;color:#666;margin-bottom:10px}
@@ -65,9 +81,22 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 #authMsg.ok,#editorMsg.ok{background:#f0fdf4;color:#166534}
 #authMsg.err,#editorMsg.err{background:#fef2f2;color:#991b1b}
 .history-item{border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.history-head{padding:12px 14px;background:#fafafa}
+.history-head{padding:12px 14px;background:#fafafa;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.history-head:hover{background:#f1f5f9}
 .history-head .h-title{font-weight:600;font-size:.95em}
 .history-head .h-meta{color:#64748b;font-size:.85em;margin-top:4px}
+.history-head .chev{color:#94a3b8;transition:.2s}
+.history-item.open .chev{transform:rotate(90deg)}
+.history-detail{padding:14px;border-top:1px solid #e2e8f0;font-size:.9em}
+.q-review{margin-bottom:14px;padding:10px;border-radius:8px;background:#f8fafc}
+.q-review-title{font-weight:600;margin-bottom:6px;font-size:.95em}
+.q-review-opts{display:flex;flex-direction:column;gap:4px}
+.q-review-opt{padding:6px 10px;border-radius:6px;font-size:.88em;background:#fff;border:1px solid #e2e8f0}
+.q-review-opt.chosen{background:#dbeafe;border-color:#2563eb;font-weight:600}
+.q-review-opt.correct{background:#f0fdf4;border-color:#16a34a}
+.q-review-opt.chosen.correct{background:#d1fae5}
+.q-review-opt.chosen.wrong{background:#fee2e2;border-color:#dc2626}
+.q-review-meta{font-size:.82em;color:#64748b;margin-top:4px}
 .editor-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa}
 .editor-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .editor-item-header .num{font-weight:700;color:#64748b;font-size:.9em}
@@ -165,6 +194,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
       <div id="options"></div>
       <div id="resultBox"></div>
       <div class="toolbar">
+        <button id="prevBtn" class="secondary hidden" onclick="prevQuestion()">← Назад</button>
         <button id="checkBtn" onclick="checkAnswer()">Проверить</button>
         <button id="nextBtn" class="secondary hidden" onclick="nextQuestion()">Следующий →</button>
       </div>
@@ -251,13 +281,12 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
   </div>
 </div>
 
-<!-- Firebase SDK (глобальный объект window.firebase) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
 /* ============================================================
-   FIREBASE ИНИЦИАЛИЗАЦИЯ (compat-версия, глобальный firebase)
+   FIREBASE
    ============================================================ */
 var firebaseConfig = {
   apiKey: "AIzaSyCPWPw6-SeO9_4Nwt1ZmwxcGRI5dnucir4",
@@ -265,16 +294,12 @@ var firebaseConfig = {
   projectId: "avito-tests",
   storageBucket: "avito-tests.firebasestorage.app",
   messagingSenderId: "1007097355508",
-  appId: "1:1007097355508:web:a98bf4d3d4069fc21392a1",
-  measurementId: "G-WPJ06LT324"
+  appId: "1:1007097355508:web:a98bf4d3d4069fc21392a1"
 };
 
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 
-/* ============================================================
-   КЭШ В ПАМЯТИ
-   ============================================================ */
 var CACHE = { users: [], tests: [], history: [] };
 
 /* ============================================================
@@ -291,16 +316,13 @@ function esc(s){
   })
 }
 function showMsg(id,type,txt){
-  var el=document.getElementById(id);
-  if(!el)return;
-  el.className='show '+type;
-  el.textContent=txt;
+  var el=document.getElementById(id);if(!el)return;
+  el.className='show '+type;el.textContent=txt;
   setTimeout(function(){el.className='';el.textContent=''},3500)
 }
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function hideLoading(){
-  var l=document.getElementById('loading');
-  if(l)l.classList.add('hidden')
+  var l=document.getElementById('loading');if(l)l.classList.add('hidden')
 }
 function showLoading(txt){
   var l=document.getElementById('loading');
@@ -308,93 +330,64 @@ function showLoading(txt){
   if(l)l.classList.remove('hidden');
   if(t)t.textContent=txt||'Загрузка...'
 }
+function letterOf(i){return String.fromCharCode(65+i)} // A, B, C, D...
 
 /* ============================================================
-   ЗАГРУЗКА ДАННЫХ ИЗ FIRESTORE
+   ЗАГРУЗКА
    ============================================================ */
 function loadAllData(){
   showLoading('Загрузка пользователей...');
   return db.collection('users').get().then(function(snap){
-    CACHE.users = snap.docs.map(function(d){
-      return Object.assign({_id:d.id}, d.data())
-    });
+    CACHE.users = snap.docs.map(function(d){return Object.assign({_id:d.id}, d.data())});
     showLoading('Загрузка тестов...');
     return db.collection('tests').get()
   }).then(function(snap){
-    CACHE.tests = snap.docs.map(function(d){
-      return Object.assign({_id:d.id}, d.data())
-    });
+    CACHE.tests = snap.docs.map(function(d){return Object.assign({_id:d.id}, d.data())});
     showLoading('Загрузка истории...');
     return db.collection('history').get()
   }).then(function(snap){
-    CACHE.history = snap.docs.map(function(d){
-      return Object.assign({_id:d.id}, d.data())
-    })
+    CACHE.history = snap.docs.map(function(d){return Object.assign({_id:d.id}, d.data())})
   }).catch(function(e){
     console.error('Ошибка загрузки:', e);
     throw e
   })
 }
 
-/* ============================================================
-   СОЗДАНИЕ АДМИНА И ДЕМО-ТЕСТОВ ПРИ ПЕРВОМ ЗАПУСКЕ
-   ============================================================ */
 function ensureAdminAndDemos(){
   var promises = [];
-
   if(CACHE.users.length === 0){
     var adminId = genId();
-    var admin = {
-      login: 'admin',
-      passHash: hashPass('admin'),
-      role: 'admin',
-      createdAt: new Date().toISOString()
-    };
-    promises.push(
-      db.collection('users').doc(adminId).set(admin).then(function(){
-        CACHE.users.push(Object.assign({_id:adminId}, admin))
-      })
-    )
+    var admin = {login:'admin', passHash:hashPass('admin'), role:'admin', createdAt:new Date().toISOString()};
+    promises.push(db.collection('users').doc(adminId).set(admin).then(function(){
+      CACHE.users.push(Object.assign({_id:adminId}, admin))
+    }))
   }
-
   if(CACHE.tests.length === 0){
-    var d1Id = genId();
-    var d2Id = genId();
-    var demo1 = {
-      name: 'Демо: общие знания',
-      questions: [
-        {question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,image:''},
-        {question:'7 × 8 = ?',options:['54','56','48','64'],correct:1,image:''}
-      ]
-    };
-    var demo2 = {
-      name: 'Демо: Авито',
-      questions: [
-        {question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,image:''},
-        {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:''}
-      ]
-    };
-    promises.push(
-      db.collection('tests').doc(d1Id).set(demo1).then(function(){
-        CACHE.tests.push(Object.assign({_id:d1Id}, demo1))
-      })
-    );
-    promises.push(
-      db.collection('tests').doc(d2Id).set(demo2).then(function(){
-        CACHE.tests.push(Object.assign({_id:d2Id}, demo2))
-      })
-    )
+    var d1Id=genId(), d2Id=genId();
+    var d1={name:'Демо: общие знания',questions:[
+      {question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,image:''},
+      {question:'7 × 8 = ?',options:['54','56','48','64'],correct:1,image:''}
+    ]};
+    var d2={name:'Демо: Авито',questions:[
+      {question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,image:''},
+      {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:''}
+    ]};
+    promises.push(db.collection('tests').doc(d1Id).set(d1).then(function(){
+      CACHE.tests.push(Object.assign({_id:d1Id}, d1))
+    }));
+    promises.push(db.collection('tests').doc(d2Id).set(d2).then(function(){
+      CACHE.tests.push(Object.assign({_id:d2Id}, d2))
+    }))
   }
-
   return Promise.all(promises)
 }
 
-function getUsers(){ return CACHE.users.slice() }
-function getTests(){ return CACHE.tests.slice() }
-function getHistory(){ return CACHE.history.slice() }
+function getUsers(){return CACHE.users.slice()}
+function getTests(){return CACHE.tests.slice()}
+function getHistory(){return CACHE.history.slice()}
 
 /* ============================================================
-   СЕССИЯ (localStorage — только текущий браузер)
+   СЕССИЯ
    ============================================================ */
 var SESSION_KEY = 't_session_v2';
 function getSession(){
@@ -415,8 +408,7 @@ function initApp(){
     var s = getSession();
     if(s){
       if(s.type==='guest'){
-        enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});
-        return
+        enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return
       }
       var u = CACHE.users.find(function(x){return x.login===s.login});
       if(u){enterApp(u);return}
@@ -428,12 +420,8 @@ function initApp(){
     document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#dc2626;font-family:system-ui">'+
       '<h2>Ошибка подключения к Firebase</h2>'+
       '<p style="font-size:.95em;background:#fef2f2;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
-      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте:</p>'+
-      '<ul style="display:inline-block;text-align:left;color:#64748b;font-size:.9em">'+
-        '<li>Firestore Database создана в Firebase Console</li>'+
-        '<li>Правила (Rules) опубликованы: <code>allow read, write: if true;</code></li>'+
-        '<li>Сайт открыт по http:// или https:// (не file://)</li>'+
-      '</ul></div>';
+      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте что Firestore создан и правила опубликованы:<br>'+
+      '<code style="display:block;background:#f1f5f9;padding:8px;border-radius:6px;margin-top:8px;font-size:.85em">allow read, write: if true;</code></p></div>';
   })
 }
 
@@ -455,8 +443,7 @@ function switchAuthTab(name){
   document.getElementById('loginForm').classList.toggle('hidden',name!=='login');
   document.getElementById('registerForm').classList.toggle('hidden',name!=='register');
   document.getElementById('guestForm').classList.toggle('hidden',name!=='guest');
-  var m=document.getElementById('authMsg');
-  m.className='';m.textContent=''
+  var m=document.getElementById('authMsg');m.className='';m.textContent=''
 }
 
 function handleLogin(e){
@@ -491,9 +478,7 @@ function handleRegister(e){
     document.getElementById('regPass').value='';
     document.getElementById('regPass2').value='';
     enterApp(Object.assign({_id:id}, nu))
-  }).catch(function(err){
-    showMsg('authMsg','err','Ошибка: '+err.message)
-  })
+  }).catch(function(err){showMsg('authMsg','err','Ошибка: '+err.message)})
 }
 
 function handleGuest(e){
@@ -505,11 +490,7 @@ function handleGuest(e){
   enterApp({login:fio,role:'guest',fio:fio,isGuest:true})
 }
 
-function logout(){
-  setSession(null);
-  currentUser=null;
-  showAuthScreen()
-}
+function logout(){setSession(null);currentUser=null;showAuthScreen()}
 
 var currentUser=null;
 var currentTest=null;
@@ -524,8 +505,7 @@ function enterApp(u){
   else if(u.role==='guest'){b.className='role-badge role-guest';b.textContent='Гость'}
   else{b.className='role-badge role-user';b.textContent='Пользователь'}
 
-  var cpBtn=document.getElementById('changePassBtn');
-  cpBtn.classList.toggle('hidden',u.role!=='admin');
+  document.getElementById('changePassBtn').classList.toggle('hidden',u.role!=='admin');
 
   var gb=document.getElementById('guestBanner');
   if(u.role==='guest'){
@@ -568,8 +548,7 @@ function renderTests(){
   var tests=getTests();
   var list=document.getElementById('testsList');
   if(!tests.length){
-    list.innerHTML='<div class="empty-state">📭 Тестов пока нет</div>';
-    return
+    list.innerHTML='<div class="empty-state">📭 Тестов пока нет</div>';return
   }
   var isAdmin=currentUser.role==='admin';
   list.innerHTML=tests.map(function(t){
@@ -596,18 +575,28 @@ function openTestStart(id){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
   document.getElementById('startTitle').textContent=t.name;
-  document.getElementById('startInfo').textContent='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены.'
+  document.getElementById('startInfo').textContent='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены. Можно вернуться к предыдущему вопросу.'
 }
 
 /* ============================================================
-   ПРОХОЖДЕНИЕ
+   ПРОХОЖДЕНИЕ — НОВЫЙ ПРОЦЕСС ВЫБОРА
+   Храним для каждого вопроса: attempts (всего попыток),
+   solved (решён), choices[] (индексы всех выбранных вариантов),
+   correct (правильный индекс для истории)
    ============================================================ */
-var cur=0;var sel=null;var chk=false;var qStats=[];var started=0;
+var cur=0;
+var chk=false;         // проверен ли текущий вопрос
+var qStats=[];         // статистика по каждому вопросу
+var currentSel=[];     // currentSel[i] = индекс выбранного в текущий момент или null
+var started=0;
 
 function startTest(){
   if(!currentTest)return;
   cur=0;
-  qStats=currentTest.questions.map(function(){return{attempts:0,solved:false}});
+  qStats=currentTest.questions.map(function(){
+    return {attempts:0, solved:false, choices:[], firstChoice:null}
+  });
+  currentSel=currentTest.questions.map(function(){return null});
   started=Date.now();
   document.getElementById('startView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
@@ -616,9 +605,14 @@ function startTest(){
 }
 
 function renderQ(){
-  chk=false;sel=null;
+  chk=false;
   var q=currentTest.questions[cur];
-  document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts;
+  var sel=currentSel[cur];
+
+  document.getElementById('progress').textContent =
+    'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts+
+    (qStats[cur].solved?' • ✅ решён':'');
+
   document.getElementById('questionText').textContent=q.question||'(без текста)';
 
   var iw=document.getElementById('questionImageWrap');
@@ -628,58 +622,110 @@ function renderQ(){
     iw.innerHTML=''
   }
 
-  var rb=document.getElementById('resultBox');rb.innerHTML='';rb.className='';
-  var opts=document.getElementById('options');opts.innerHTML='';
+  var rb=document.getElementById('resultBox');
+  rb.innerHTML='';rb.className='';
+
+  // Если вопрос уже решён — показываем разбор и блокируем
+  var solvedQ = qStats[cur].solved;
+  var opts=document.getElementById('options');
+  opts.innerHTML='';
   q.options.forEach(function(text,i){
-    var l=document.createElement('label');
-    l.className='option';l.dataset.i=i;
-    l.innerHTML='<input type="radio" name="q" value="'+i+'"> '+esc(text||('Вариант '+(i+1)));
-    l.onclick=function(){pickOption(i,l)};
-    opts.appendChild(l)
+    var div=document.createElement('div');
+    div.className='option';
+    div.dataset.i=i;
+    div.dataset.letter=letterOf(i);
+    div.innerHTML='<span>'+esc(text||('Вариант '+(i+1)))+'</span>';
+
+    if(solvedQ){
+      div.classList.add('disabled');
+      if(i===q.correct)div.classList.add('correct');
+      else if(i===sel)div.classList.add('wrong');
+    } else {
+      if(i===sel)div.classList.add('selected');
+      div.onclick=(function(idx){
+        return function(){pickOption(idx)}
+      })(i);
+    }
+    opts.appendChild(div)
   });
-  var cb=document.getElementById('checkBtn');cb.classList.remove('hidden');cb.disabled=false;
-  document.getElementById('nextBtn').classList.add('hidden')
+
+  var prevBtn=document.getElementById('prevBtn');
+  prevBtn.classList.toggle('hidden',cur===0);
+
+  var cb=document.getElementById('checkBtn');
+  var nb=document.getElementById('nextBtn');
+
+  if(solvedQ){
+    // Вопрос уже решён — кнопки проверки нет
+    cb.classList.add('hidden');
+    nb.classList.remove('hidden');
+    nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
+  } else {
+    cb.classList.remove('hidden');
+    cb.disabled=false;
+    nb.classList.add('hidden')
+  }
 }
 
-function pickOption(i,l){
+function pickOption(i){
   if(chk)return;
-  sel=i;
-  document.querySelectorAll('.option').forEach(function(el){el.classList.remove('selected')});
-  l.classList.add('selected')
+  if(qStats[cur].solved)return;
+  currentSel[cur]=i;
+  // обновляем визуально
+  document.querySelectorAll('.option').forEach(function(el){
+    el.classList.toggle('selected', parseInt(el.dataset.i,10)===i)
+  })
 }
 
 function checkAnswer(){
-  if(sel===null){
+  if(currentSel[cur]===null){
     var r=document.getElementById('resultBox');
     r.innerHTML='⚠️ Выберите вариант';r.className='result fail';return
   }
-  chk=true;qStats[cur].attempts++;
-  var correct=currentTest.questions[cur].correct;
-  var ok=sel===correct;
+  chk=true;
+  var chosen=currentSel[cur];
+  qStats[cur].attempts++;
+  // сохраняем ВСЕ выборы для истории
+  qStats[cur].choices.push(chosen);
+  if(qStats[cur].firstChoice===null)qStats[cur].firstChoice=chosen;
+
+  var q=currentTest.questions[cur];
+  var ok=chosen===q.correct;
+
   document.querySelectorAll('.option').forEach(function(el,i){
-    if(i===correct)el.classList.add('correct');
-    else if(i===sel)el.classList.add('wrong')
+    el.classList.remove('selected');
+    if(i===q.correct)el.classList.add('correct');
+    else if(i===chosen)el.classList.add('wrong')
   });
+
   var rb=document.getElementById('resultBox');
   if(ok){
     qStats[cur].solved=true;
     rb.className='result ok';
-    rb.textContent='✅ Верно! Попыток: '+qStats[cur].attempts;
+    rb.textContent='✅ Верно! Попыток на вопрос: '+qStats[cur].attempts;
     document.getElementById('checkBtn').classList.add('hidden');
-    var nb=document.getElementById('nextBtn');nb.classList.remove('hidden');
+    var nb=document.getElementById('nextBtn');
+    nb.classList.remove('hidden');
     nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   } else {
     rb.className='result fail';
-    rb.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Ещё раз.';
+    rb.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте ещё раз — выберите другой вариант.';
     setTimeout(function(){
       chk=false;
-      document.querySelectorAll('.option').forEach(function(el){el.classList.remove('correct','wrong')});
-      var s=document.querySelector('.option[data-i="'+sel+'"]');
-      if(s)s.classList.add('selected');
+      // Возвращаемся в режим выбора, но без подсветки правильного
+      document.querySelectorAll('.option').forEach(function(el,i){
+        el.classList.remove('correct','wrong','selected');
+        if(i===currentSel[cur])el.classList.add('selected');
+        el.onclick=(function(idx){
+          return function(){pickOption(idx)}
+        })(i)
+      });
       document.getElementById('checkBtn').disabled=false
-    },900)
+    },1200)
   }
-  document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts
+  document.getElementById('progress').textContent =
+    'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts+
+    (qStats[cur].solved?' • ✅ решён':'')
 }
 
 function nextQuestion(){
@@ -687,39 +733,60 @@ function nextQuestion(){
   else finishTest()
 }
 
-function finishTest(){
+function prevQuestion(){
+  if(cur>0){cur--;renderQ()}
+}
+
+async function finishTest(){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.remove('hidden');
   var tot=qStats.reduce(function(s,q){return s+q.attempts},0);
   var ft=qStats.filter(function(q){return q.solved&&q.attempts===1}).length;
   var el=Math.round((Date.now()-started)/1000);
-  document.getElementById('finalStats').innerHTML=
+
+  document.getElementById('finalStats').innerHTML =
     '<div class="stat"><b>'+currentTest.questions.length+'</b>вопросов</div>'+
     '<div class="stat"><b>'+qStats.filter(function(q){return q.solved}).length+'</b>решено</div>'+
     '<div class="stat"><b>'+ft+'</b>с 1-й попытки</div>'+
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
+  // Готовим детали: по каждому вопросу — что выбирали
+  var details = currentTest.questions.map(function(q,i){
+    return {
+      question: q.question,
+      options: q.options,
+      correct: q.correct,
+      choices: qStats[i].choices,       // массив всех выборов
+      firstChoice: qStats[i].firstChoice,
+      attempts: qStats[i].attempts,
+      solved: qStats[i].solved
+    }
+  });
+
   var rec = {
-    testId:currentTest._id,
-    testName:currentTest.name,
-    user:currentUser.login,
-    userRole:currentUser.role,
-    fio:currentUser.role==='guest'?currentUser.fio:null,
-    date:new Date().toLocaleString('ru-RU'),
-    timestamp:Date.now(),
-    questions:currentTest.questions.length,
-    totalAttempts:tot,
-    solvedFirstTry:ft,
-    elapsed:el
+    testId: currentTest._id,
+    testName: currentTest.name,
+    user: currentUser.login,
+    userRole: currentUser.role,
+    fio: currentUser.role==='guest'?currentUser.fio:null,
+    date: new Date().toLocaleString('ru-RU'),
+    timestamp: Date.now(),
+    questions: currentTest.questions.length,
+    totalAttempts: tot,
+    solvedFirstTry: ft,
+    elapsed: el,
+    details: details
   };
+
   var id = genId();
-  db.collection('history').doc(id).set(rec).then(function(){
+  try {
+    await db.collection('history').doc(id).set(rec);
     CACHE.history.unshift(Object.assign({_id:id}, rec))
-  }).catch(function(e){
+  } catch(e){
     console.error('Не удалось сохранить результат:', e);
-    alert('Результат не сохранён в облако: '+e.message)
-  })
+    alert('Результат не сохранён: '+e.message)
+  }
 }
 /* ============================================================
    СМЕНА ПАРОЛЯ (только admin)
@@ -751,9 +818,7 @@ function submitChangePass(){
     u.passHash=hashPass(newP);
     closeChangePassModal();
     alert('Пароль администратора изменён')
-  }).catch(function(e){
-    msg.textContent='Ошибка: '+e.message
-  })
+  }).catch(function(e){msg.textContent='Ошибка: '+e.message})
 }
 
 /* ============================================================
@@ -804,12 +869,54 @@ function renderResults(){
   if(!filtered.length){
     list.innerHTML='<div class="empty-state">Пусто</div>';return
   }
-  list.innerHTML=filtered.map(function(r){
+  list.innerHTML=filtered.map(function(r,idx){
     var who=r.userRole==='guest'?'👤 '+esc(r.fio)+' (гость)':'👤 '+esc(r.user);
-    return '<div class="history-item"><div class="history-head">'+
-      '<div class="h-title">'+esc(r.date)+' — <span style="color:#0090db">'+esc(r.testName)+'</span></div>'+
-      '<div class="h-meta">'+who+' • '+r.questions+' вопр. • '+r.totalAttempts+' попыток • '+r.solvedFirstTry+' с 1-й • '+r.elapsed+' сек</div>'+
-    '</div></div>'
+    return '<div class="history-item" data-idx="'+idx+'">'+
+      '<div class="history-head" onclick="toggleHistoryDetail('+idx+')">'+
+        '<div>'+
+          '<div class="h-title">'+esc(r.date)+' — <span style="color:#0090db">'+esc(r.testName)+'</span></div>'+
+          '<div class="h-meta">'+who+' • '+r.questions+' вопр. • '+r.totalAttempts+' попыток • '+r.solvedFirstTry+' с 1-й • '+r.elapsed+' сек</div>'+
+        '</div>'+
+        '<span class="chev">▸</span>'+
+      '</div>'+
+      '<div class="history-detail hidden">'+buildHistoryDetailHTML(r)+'</div>'+
+    '</div>'
+  }).join('')
+}
+
+function toggleHistoryDetail(idx){
+  var item=document.querySelector('.history-item[data-idx="'+idx+'"]');
+  if(!item)return;
+  item.classList.toggle('open');
+  var d=item.querySelector('.history-detail');
+  d.classList.toggle('hidden')
+}
+
+function buildHistoryDetailHTML(r){
+  var details=r.details;
+  if(!details||!details.length){
+    return '<p style="color:#94a3b8">Детали недоступны (запись старая)</p>'
+  }
+  return details.map(function(d,i){
+    var optsHtml=d.options.map(function(opt,oi){
+      var cls='q-review-opt';
+      if(oi===d.correct)cls+=' correct';
+      // выбранные варианты — все, что есть в choices
+      if(d.choices&&d.choices.indexOf(oi)!==-1)cls+=' chosen';
+      if(d.choices&&d.choices.indexOf(oi)!==-1 && oi!==d.correct)cls+=' wrong';
+      var mark='';
+      if(d.choices&&d.choices.indexOf(oi)!==-1)mark+=' 👈 выбирал';
+      if(oi===d.correct)mark+=' ✓ правильный';
+      return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+mark+'</div>'
+    }).join('');
+    return '<div class="q-review">'+
+      '<div class="q-review-title">'+(i+1)+'. '+esc(d.question||'(без текста)')+'</div>'+
+      '<div class="q-review-opts">'+optsHtml+'</div>'+
+      '<div class="q-review-meta">Попыток: '+d.attempts+' • '+
+        (d.solved?'✅ решён':'❌ не решён')+
+        (d.firstChoice!==null&&d.firstChoice!==undefined?' • Первый выбор: '+letterOf(d.firstChoice):'')+
+      '</div>'+
+    '</div>'
   }).join('')
 }
 
@@ -829,30 +936,45 @@ function clearTestHistory(){
 }
 
 /* ============================================================
-   ПОЛЬЗОВАТЕЛИ (admin)
+   ПОЛЬЗОВАТЕЛИ (admin) — удаление аккаунтов
    ============================================================ */
 function renderUsers(){
   var users=getUsers();var h=getHistory();
   var el=document.getElementById('usersList');
-  el.innerHTML='<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th style="padding:8px">Логин</th><th style="padding:8px">Роль</th><th style="padding:8px">Прохождений</th><th></th></tr></thead><tbody>'+
-    users.map(function(u){
-      var runs=h.filter(function(r){return r.user===u.login}).length;
-      var isSelf=u.login===currentUser.login;
-      var canDel=!isSelf&&u.login!=='admin';
-      return '<tr style="border-bottom:1px solid #eee">'+
-        '<td style="padding:8px"><b>'+esc(u.login)+'</b>'+(isSelf?' (вы)':'')+'</td>'+
-        '<td style="padding:8px"><span class="role-badge '+(u.role==='admin'?'role-admin':'role-user')+'">'+(u.role==='admin'?'Админ':'Польз.')+'</span></td>'+
-        '<td style="padding:8px">'+runs+'</td>'+
-        '<td style="padding:8px;text-align:right">'+
-          (u.role!=='admin'?'<button class="small secondary" onclick="promoteUser(\''+esc(u.login)+'\')">↑ Админ</button> ':'')+
-          (u.role!=='admin'?'<button class="small secondary" onclick="resetUserPassword(\''+esc(u.login)+'\')">🔑 Сброс</button> ':'')+
-          (canDel?'<button class="small danger" onclick="deleteUser(\''+esc(u.login)+'\')">✕</button>':'')+
-        '</td></tr>'
-    }).join('')+'</tbody></table>'
+  el.innerHTML=
+    '<div style="margin-bottom:12px;font-size:.9em;color:#64748b">'+
+      'Всего: <b>'+users.length+'</b>. '+
+      '<span class="role-badge role-admin">Админ</span> — доступ к редактору и результатам. '+
+      '<span class="role-badge role-user">Пользователь</span> — проходит тесты.'+
+    '</div>'+
+    '<table style="width:100%;border-collapse:collapse"><thead>'+
+      '<tr style="text-align:left;background:#f8fafc">'+
+        '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Логин</th>'+
+        '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Роль</th>'+
+        '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Прохождений</th>'+
+        '<th style="padding:10px;border-bottom:2px solid #e2e8f0;text-align:right">Действия</th>'+
+      '</tr></thead><tbody>'+
+      users.map(function(u){
+        var runs=h.filter(function(r){return r.user===u.login}).length;
+        var isSelf=u.login===currentUser.login;
+        var canDel=!isSelf&&u.login!=='admin';
+        return '<tr style="border-bottom:1px solid #eef2f7">'+
+          '<td style="padding:10px"><b>'+esc(u.login)+'</b>'+(isSelf?' <span style="color:#00AAFF;font-size:.82em">(вы)</span>':'')+'</td>'+
+          '<td style="padding:10px"><span class="role-badge '+(u.role==='admin'?'role-admin':'role-user')+'">'+
+            (u.role==='admin'?'Админ':'Пользователь')+'</span></td>'+
+          '<td style="padding:10px">'+runs+'</td>'+
+          '<td style="padding:10px;text-align:right">'+
+            (u.role!=='admin'?'<button class="small secondary" onclick="promoteUser(\''+esc(u.login)+'\')">↑ Сделать админом</button> ':'')+
+            (u.role!=='admin'?'<button class="small secondary" onclick="resetUserPassword(\''+esc(u.login)+'\')">🔑 Сброс пароля</button> ':'')+
+            (canDel?'<button class="small danger" onclick="deleteUser(\''+esc(u.login)+'\')">🗑 Удалить</button>':'')+
+          '</td>'+
+        '</tr>'
+      }).join('')+
+    '</tbody></table>'
 }
 
 function promoteUser(login){
-  if(!confirm('Сделать '+login+' админом?'))return;
+  if(!confirm('Сделать «'+login+'» администратором?'))return;
   var u=CACHE.users.find(function(x){return x.login===login});
   if(!u)return;
   db.collection('users').doc(u._id).update({role:'admin'}).then(function(){
@@ -873,9 +995,14 @@ function resetUserPassword(login){
 }
 
 function deleteUser(login){
-  if(!confirm('Удалить '+login+'?'))return;
   var u=CACHE.users.find(function(x){return x.login===login});
   if(!u)return;
+  var runs=CACHE.history.filter(function(r){return r.user===login}).length;
+  var msg='Удалить аккаунт «'+login+'»?\n\n';
+  if(runs>0)msg+='Вместе с аккаунтом будет удалено '+runs+' записей истории прохождений.\n\n';
+  msg+='Действие нельзя отменить.';
+  if(!confirm(msg))return;
+
   var toDel=CACHE.history.filter(function(r){return r.user===login});
   var batch=db.batch();
   batch.delete(db.collection('users').doc(u._id));
@@ -886,7 +1013,7 @@ function deleteUser(login){
     CACHE.users=CACHE.users.filter(function(x){return x.login!==login});
     CACHE.history=CACHE.history.filter(function(r){return r.user!==login});
     renderUsers()
-  }).catch(function(e){alert('Ошибка: '+e.message)})
+  }).catch(function(e){alert('Ошибка удаления: '+e.message)})
 }
 
 /* ============================================================
@@ -911,7 +1038,7 @@ function editTest(id){editTestId=id;switchTab('editor')}
 function deleteTest(id){
   var t=CACHE.tests.find(function(x){return x._id===id});
   if(!t)return;
-  if(!confirm('Удалить тест «'+t.name+'»? Вся история тоже удалится.'))return;
+  if(!confirm('Удалить тест «'+t.name+'»? Вся история по нему тоже удалится.'))return;
   var toDel=CACHE.history.filter(function(r){return r.testId===id});
   var batch=db.batch();
   batch.delete(db.collection('tests').doc(id));
@@ -938,8 +1065,8 @@ function renderEditor(){
   list.innerHTML=t.questions.map(function(q,qi){
     var opts=q.options.map(function(opt,oi){
       return '<div class="opt-row">'+
-        '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')">'+
-        '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)">'+
+        '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" title="Отметить как правильный">'+
+        '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'">'+
         '<button class="small secondary" onclick="delOpt('+qi+','+oi+')" '+(q.options.length<=2?'disabled':'')+'>✕</button>'+
       '</div>'
     }).join('');
@@ -955,7 +1082,7 @@ function renderEditor(){
           '<button class="small secondary" onclick="openImageModal('+qi+')">🖼 '+(q.image?'Заменить':'Прикрепить')+'</button>'+
           (q.image?'<button class="small danger" onclick="removeQImage('+qi+')">Убрать</button>':'')+
         '</div></div>'+
-      '<div class="field"><label>Варианты</label>'+opts+
+      '<div class="field"><label>Варианты (радио = правильный)</label>'+opts+
         '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>'+
     '</div>'
   }).join('')
@@ -1056,7 +1183,7 @@ function closeImageModal(){
 function loadImageFile(e){
   var f=e.target.files[0];if(!f)return;
   if(f.size>800*1024){
-    alert('Файл больше 800 КБ. Firestore ограничивает документ 1 МБ. Используйте URL или меньший файл.');
+    alert('Файл больше 800 КБ. Используйте URL или меньший файл.');
     e.target.value='';return
   }
   var r=new FileReader();
