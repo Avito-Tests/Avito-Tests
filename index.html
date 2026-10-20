@@ -31,6 +31,9 @@ button.small{padding:6px 12px;font-size:.85em}
 .question-text{font-size:1.15em;font-weight:600;margin-bottom:14px}
 .q-image{max-width:100%;max-height:300px;border-radius:8px;margin-bottom:14px;display:block;border:1px solid var(--border)}
 .progress{font-size:.9em;color:var(--muted);margin-bottom:10px}
+.timer{position:fixed;top:16px;left:16px;z-index:900;background:var(--warn-bg);color:var(--warn);padding:10px 18px;border-radius:10px;font-weight:700;font-size:1.1em;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid var(--warn)}
+.timer.danger{background:var(--fail-bg);color:var(--fail);border-color:var(--fail);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .result{font-size:1.05em;padding:10px;border-radius:8px;margin-top:12px}
 .result.ok{background:var(--ok-bg);color:var(--ok)}
 .result.fail{background:var(--fail-bg);color:var(--fail)}
@@ -90,6 +93,8 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .status-fail{background:var(--fail-bg);color:var(--fail)}
 .result-score{font-size:1.3em;font-weight:700;color:var(--accent)}
 .check-btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.stat-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:4px 0}
+.stat-bar-fill{height:100%;background:linear-gradient(90deg,var(--fail),var(--warn),var(--ok))}
 </style>
 </head>
 <body>
@@ -136,8 +141,9 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
   <div class="tabs">
     <button class="tab active" data-tab="tests" onclick="switchTab('tests')">📚 Тесты</button>
     <button class="tab user-only hidden" data-tab="myresults" onclick="switchTab('myresults')">📊 Мои результаты</button>
-    <button class="tab admin-only hidden" data-tab="pending" onclick="switchTab('pending')">⏳ Тесты на проверку <span id="pendingCount"></span></button>
+    <button class="tab admin-only hidden" data-tab="pending" onclick="switchTab('pending')">⏳ На проверку <span id="pendingCount"></span></button>
     <button class="tab admin-only hidden" data-tab="results" onclick="switchTab('results')">👁 Все результаты</button>
+    <button class="tab admin-only hidden" data-tab="stats" onclick="switchTab('stats')">📈 Статистика</button>
     <button class="tab admin-only hidden" data-tab="users" onclick="switchTab('users')">👥 Пользователи</button>
   </div>
   <div id="tab-tests">
@@ -184,14 +190,14 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
   <div id="tab-myresults" class="hidden">
     <div class="card">
       <h2>📊 Мои результаты</h2>
-      <p style="color:var(--muted);font-size:.9em">Письменные тесты появляются после проверки администратором.</p>
+      <p style="color:var(--muted);font-size:.9em">Здесь только ваши результаты. Письменные появляются после проверки.</p>
       <div id="myResultsList"></div>
     </div>
   </div>
   <div id="tab-pending" class="hidden">
     <div class="card">
-      <h2>⏳ Тесты на проверку</h2>
-      <p style="color:var(--muted);font-size:.9em">Только результаты с письменными ответами, ожидающие проверки.</p>
+      <h2>⏳ На проверку</h2>
+      <p style="color:var(--muted);font-size:.9em">Только результаты с письменными ответами.</p>
       <div id="pendingList"></div>
     </div>
   </div>
@@ -206,6 +212,13 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
       <div id="historyList"></div>
     </div>
   </div>
+  <div id="tab-stats" class="hidden">
+    <div class="card">
+      <h2>📈 Статистика по вопросам</h2>
+      <div class="form-row" style="max-width:400px"><label>Тест:</label><select id="statsTestFilter" onchange="renderStats()"></select></div>
+      <div id="statsContent"></div>
+    </div>
+  </div>
   <div id="tab-users" class="hidden"><div class="card"><h2>Пользователи</h2><div id="usersList"></div></div></div>
   <div id="tab-editor" class="hidden">
     <div class="card">
@@ -214,6 +227,11 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
         <button class="secondary small" onclick="backToTests()">← К тестам</button>
       </div>
       <div class="form-row"><label>Название теста</label><input type="text" id="editorTestName" name="app_test_title" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="updateTestName(this.value)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="form-row" style="margin:0"><label>⏱️ Время (мин, 0 = без лимита)</label><input type="number" id="editorTimeLimit" min="0" max="180" oninput="updateTestTimeLimit(this.value)" name="app_time"></div>
+        <div class="form-row" style="margin:0"><label>🎯 Порог прохождения (%)</label><input type="number" id="editorPassScore" min="0" max="100" oninput="updateTestPassScore(this.value)" name="app_pass"></div>
+        <div class="form-row" style="margin:0"><label>🔀 Перемешивать</label><select id="editorShuffle" onchange="updateTestShuffle(this.value)" name="app_shuffle"><option value="none">Нет</option><option value="questions">Вопросы</option><option value="both">Вопросы + варианты</option></select></div>
+      </div>
       <div id="editorMsg"></div>
       <div id="editorList"></div>
       <div class="toolbar"><button onclick="addQuestion()">+ Добавить вопрос</button></div>
@@ -263,12 +281,11 @@ var firebaseConfig={
 };
 firebase.initializeApp(firebaseConfig);
 var db=firebase.firestore();
-// ФИКС: Firestore не принимает undefined — включаем игнорирование
 try{db.settings({ignoreUndefinedProperties:true});}catch(e){}
 
 var CACHE={users:[],tests:[],history:[]};
 
-/* === ОЧИСТКА ОТ undefined ДЛЯ FIRESTORE === */
+/* === ОЧИСТКА ОТ undefined === */
 function cleanForFirestore(obj){
   if(obj===null||obj===undefined)return null;
   if(typeof obj!=='object')return obj;
@@ -319,6 +336,16 @@ function hideLoading(){
   if(l)l.remove()
 }
 
+/* === ПЕРЕМЕШИВАНИЕ (Фишер-Йетс) === */
+function shuffleArray(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var tmp=a[i];a[i]=a[j];a[j]=tmp;
+  }
+  return a
+}
+
 /* === ЗАГРУЗКА === */
 function loadAllData(){
   return db.collection('users').get().then(function(snap){
@@ -343,7 +370,7 @@ function ensureAdminAndDemos(){
   }
   if(CACHE.tests.length===0){
     var d1Id=genId();
-    var d1={name:'Демо: общие знания',questions:[
+    var d1={name:'Демо: общие знания',timeLimit:0,passScore:60,shuffle:'none',questions:[
       {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
       {type:'text',question:'Сколько будет 7 × 8?',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56.',explanationImage:''}
     ]};
@@ -358,7 +385,7 @@ function getUsers(){return CACHE.users.slice()}
 function getTests(){return CACHE.tests.slice()}
 function getHistory(){return CACHE.history.slice()}
 
-/* === БЕЗОПАСНЫЙ ПОИСК ПО ЛОГИНУ === */
+/* === БЕЗОПАСНЫЙ ПОИСК === */
 function findUserByLogin(login){
   if(!login||typeof login!=='string')return null;
   var lower=login.toLowerCase();
@@ -366,32 +393,21 @@ function findUserByLogin(login){
     return x.login && typeof x.login==='string' && x.login.toLowerCase()===lower
   })||null
 }
-function loginExists(login){
-  return !!findUserByLogin(login)
-}
+function loginExists(login){return !!findUserByLogin(login)}
 
-/* === ПОДПИСКА НА ИЗМЕНЕНИЯ HISTORY В РЕАЛЬНОМ ВРЕМЕНИ === */
-/* При добавлении/изменении/удалении результата — обновляем CACHE.history
-   и перерисовываем активную вкладку. Работает у всех открытых вкладок. */
+/* === ПОДПИСКА НА ИЗМЕНЕНИЯ === */
 function subscribeToHistory(){
   db.collection('history').onSnapshot(function(snap){
     var changed=false;
     snap.docChanges().forEach(function(change){
       if(change.type==='added'){
         var data=Object.assign({_id:change.doc.id},change.doc.data());
-        // Проверяем, нет ли уже в кэше (чтобы не дублировать)
         var exists=CACHE.history.some(function(r){return r._id===data._id});
-        if(!exists){
-          CACHE.history.unshift(data);
-          changed=true;
-        }
+        if(!exists){CACHE.history.unshift(data);changed=true}
       } else if(change.type==='modified'){
         var data2=Object.assign({_id:change.doc.id},change.doc.data());
         var idx=CACHE.history.findIndex(function(r){return r._id===data2._id});
-        if(idx!==-1){
-          CACHE.history[idx]=data2;
-          changed=true;
-        }
+        if(idx!==-1){CACHE.history[idx]=data2;changed=true}
       } else if(change.type==='removed'){
         var beforeLen=CACHE.history.length;
         CACHE.history=CACHE.history.filter(function(r){return r._id!==change.doc.id});
@@ -400,18 +416,16 @@ function subscribeToHistory(){
     });
     if(changed){
       updatePendingBadge();
-      // Обновляем активную вкладку, если это результаты/проверка
       var activeTab=document.querySelector('.tab.active');
       if(activeTab){
         var name=activeTab.dataset.tab;
         if(name==='results'&&currentUser&&currentUser.role==='admin')renderResults();
         if(name==='pending'&&currentUser&&currentUser.role==='admin')renderPending();
         if(name==='myresults'&&currentUser&&currentUser.role!=='admin')renderMyResults();
+        if(name==='stats'&&currentUser&&currentUser.role==='admin')renderStats();
       }
     }
-  }, function(error){
-    console.error('Ошибка подписки на history:',error);
-  });
+  },function(error){console.error('Ошибка подписки:',error)})
 }
 
 /* === СЕССИЯ === */
@@ -431,7 +445,7 @@ function initApp(){
     return ensureAdminAndDemos()
   }).then(function(){
     hideLoading();
-    subscribeToHistory();  // ← ПОДПИСКА НА РЕАЛЬНОЕ ВРЕМЯ
+    subscribeToHistory();
     var s=getSession();
     if(s){
       if(s.type==='guest'){enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return}
@@ -490,9 +504,7 @@ function handleRegister(e){
   if(login.length<3){showMsg('authMsg','err','Логин минимум 3 символа');return}
   if(pass.length<4){showMsg('authMsg','err','Пароль минимум 4 символа');return}
   if(pass!==pass2){showMsg('authMsg','err','Пароли не совпадают');return}
-  if(loginExists(login)){
-    showMsg('authMsg','err','Логин уже занят');return
-  }
+  if(loginExists(login)){showMsg('authMsg','err','Логин уже занят');return}
   var id=genId();
   var nu={login:login,passHash:hashPass(pass),role:'user',createdAt:new Date().toISOString()};
   db.collection('users').doc(id).set(nu).then(function(){
@@ -547,14 +559,14 @@ function enterApp(u){
 }
 
 function switchTab(name){
-  var adminOnly=['pending','results','users','editor'];
+  var adminOnly=['pending','results','stats','users','editor'];
   if(adminOnly.indexOf(name)!==-1&&(!currentUser||currentUser.role!=='admin'))name='tests';
   if(name==='myresults'&&currentUser&&currentUser.role==='admin')name='tests';
 
   document.querySelectorAll('.tab[data-tab]').forEach(function(t){
     t.classList.toggle('active',t.dataset.tab===name)
   });
-  ['tests','myresults','pending','results','users','editor'].forEach(function(n){
+  ['tests','myresults','pending','results','stats','users','editor'].forEach(function(n){
     var el=document.getElementById('tab-'+n);
     if(el)el.classList.toggle('hidden',n!==name)
   });
@@ -562,6 +574,7 @@ function switchTab(name){
   if(name==='myresults')renderMyResults();
   if(name==='pending')renderPending();
   if(name==='results')renderResults();
+  if(name==='stats')renderStats();
   if(name==='users')renderUsers();
   if(name==='editor')renderEditor()
 }
@@ -586,9 +599,13 @@ function renderTests(){
   list.innerHTML=tests.map(function(t){
     var qn=(t.questions||[]).length;
     var hasText=(t.questions||[]).some(function(q){return q.type==='text'});
+    var meta=qn+' вопрос(ов)';
+    if(hasText)meta+=' • ✍️ с проверкой';
+    if(t.timeLimit&&t.timeLimit>0)meta+=' • ⏱️ '+t.timeLimit+' мин';
+    if(t.shuffle&&t.shuffle!=='none')meta+=' • 🔀';
     return '<div class="test-card">'+
       '<div class="tc-info"><div class="tc-title">'+esc(t.name)+'</div>'+
-      '<div class="tc-meta">'+qn+' вопрос(ов)'+(hasText?' • ✍️ с проверкой':'')+'</div></div>'+
+      '<div class="tc-meta">'+meta+'</div></div>'+
       '<div class="tc-actions">'+
         '<button onclick="openTestStart(\''+t._id+'\')"'+(qn===0?' disabled':'')+'>▶ Пройти</button>'+
         (isAdmin?'<button class="small secondary" onclick="editTest(\''+t._id+'\')">✏️</button>':'')+
@@ -606,27 +623,166 @@ function openTestStart(id){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
   document.getElementById('startTitle').textContent=t.name;
-  document.getElementById('startInfo').textContent='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены.'
+  var info='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены.';
+  if(t.timeLimit&&t.timeLimit>0)info+=' ⏱️ Время: '+t.timeLimit+' мин.';
+  if(t.shuffle&&t.shuffle!=='none')info+=' 🔀 Перемешивание: '+(t.shuffle==='both'?'вопросы и варианты':'вопросы')+'.';
+  document.getElementById('startInfo').textContent=info;
+
+  // Проверка наличия черновика
+  var draft=getDraft(t._id);
+  if(draft){
+    var btn=document.getElementById('startBtn');
+    btn.textContent='▶ Продолжить с черновика';
+    var notice=document.createElement('p');
+    notice.style.cssText='color:var(--warn);font-size:.9em;margin-top:10px';
+    notice.innerHTML='💾 Найден сохранённый черновик от '+draft.savedAt+'. Нажмите «Начать» — продолжите с того же вопроса.';
+    var sv=document.getElementById('startView');
+    var old=sv.querySelector('.draft-notice');
+    if(old)old.remove();
+    notice.className='draft-notice';
+    sv.appendChild(notice);
+  } else {
+    document.getElementById('startBtn').textContent='▶ Начать';
+    var old2=document.querySelector('.draft-notice');
+    if(old2)old2.remove();
+  }
+}
+
+/* === ЧЕРНОВИКИ === */
+var DRAFT_KEY_PREFIX='t_draft_';
+function getDraftKey(testId){return DRAFT_KEY_PREFIX+testId+'_'+currentUser.login}
+function getDraft(testId){
+  try{
+    var raw=localStorage.getItem(getDraftKey(testId));
+    return raw?JSON.parse(raw):null
+  }catch(e){return null}
+}
+function saveDraft(){
+  if(!activeTest)return;
+  try{
+    var draft={
+      testId:activeTest.id,
+      testName:activeTest.name,
+      questions:activeTest.questions,
+      cur:cur,
+      qStats:qStats,
+      currentSel:currentSel,
+      started:started,
+      deadline:deadline,
+      savedAt:new Date().toLocaleString('ru-RU')
+    };
+    localStorage.setItem(getDraftKey(activeTest.id),JSON.stringify(draft));
+  }catch(e){console.warn('Не удалось сохранить черновик:',e)}
+}
+function clearDraft(testId){
+  try{localStorage.removeItem(getDraftKey(testId))}catch(e){}
 }
 
 /* === ПРОХОЖДЕНИЕ === */
 var cur=0,chk=false,qStats=[],currentSel=[],started=0;
+var deadline=0,timerInterval=null;
 
 function startTest(){
   if(!currentTest)return;
-  activeTest={
-    id: currentTest._id,
-    name: currentTest.name,
-    questions: JSON.parse(JSON.stringify(currentTest.questions))
-  };
-  cur=0;
-  qStats=activeTest.questions.map(function(){return{attempts:0,solved:false,choices:[],firstChoice:null}});
-  currentSel=activeTest.questions.map(function(){return null});
-  started=Date.now();
+  var draft=getDraft(currentTest._id);
+
+  if(draft){
+    // Продолжаем с черновика
+    activeTest={id:draft.testId,name:draft.testName,questions:draft.questions};
+    cur=draft.cur||0;
+    qStats=draft.qStats||activeTest.questions.map(function(){return{attempts:0,solved:false,choices:[],firstChoice:null}});
+    currentSel=draft.currentSel||activeTest.questions.map(function(){return null});
+    started=draft.started||Date.now();
+    deadline=draft.deadline||0;
+    if(!confirm('Продолжить с сохранённого черновика? Вопрос '+(cur+1)+' из '+activeTest.questions.length)){
+      clearDraft(currentTest._id);
+      startTest();return
+    }
+  } else {
+    // Новый старт — применяем перемешивание
+    var questions=JSON.parse(JSON.stringify(currentTest.questions));
+
+    // Перемешивание вопросов
+    if(currentTest.shuffle==='questions'||currentTest.shuffle==='both'){
+      questions=shuffleArray(questions)
+    }
+
+    // Перемешивание вариантов
+    if(currentTest.shuffle==='both'){
+      questions=questions.map(function(q){
+        if(q.type!=='text'&&q.options&&q.options.length>1){
+          var indexed=q.options.map(function(o,i){return{o:o,i:i}});
+          var shuffled=shuffleArray(indexed);
+          var newCorrect=shuffled.findIndex(function(x){return x.i===q.correct});
+          return Object.assign({},q,{
+            options:shuffled.map(function(x){return x.o}),
+            correct:newCorrect
+          })
+        }
+        return q
+      })
+    }
+
+    activeTest={
+      id:currentTest._id,
+      name:currentTest.name,
+      timeLimit:currentTest.timeLimit||0,
+      passScore:typeof currentTest.passScore==='number'?currentTest.passScore:60,
+      questions:questions
+    };
+    cur=0;
+    qStats=activeTest.questions.map(function(){return{attempts:0,solved:false,choices:[],firstChoice:null}});
+    currentSel=activeTest.questions.map(function(){return null});
+    started=Date.now();
+    deadline=activeTest.timeLimit>0?(started+activeTest.timeLimit*60*1000):0;
+  }
+
   document.getElementById('startView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
   document.getElementById('testView').classList.remove('hidden');
+
+  // Запускаем таймер
+  startTimer();
   renderQ()
+}
+
+function startTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+  var timerEl=document.getElementById('timerBox');
+  if(timerEl)timerEl.remove();
+
+  if(!deadline||deadline<=0)return;
+
+  var box=document.createElement('div');
+  box.id='timerBox';
+  box.className='timer';
+  document.body.appendChild(box);
+
+  function tick(){
+    var now=Date.now();
+    var left=Math.max(0,deadline-now);
+    var sec=Math.floor(left/1000);
+    var m=Math.floor(sec/60);
+    var s=sec%60;
+    box.textContent='⏱️ '+m+':'+(s<10?'0':'')+s;
+    if(left<60000)box.classList.add('danger');
+    if(left<=0){
+      clearInterval(timerInterval);timerInterval=null;
+      box.textContent='⏱️ Время вышло!';
+      setTimeout(function(){
+        if(box)box.remove();
+        finishTest(true);
+      },500)
+    }
+  }
+  tick();
+  timerInterval=setInterval(tick,1000)
+}
+
+function stopTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+  var box=document.getElementById('timerBox');
+  if(box)box.remove()
 }
 
 function renderQ(){
@@ -685,7 +841,7 @@ function renderQ(){
       inp.style.borderColor='var(--ok)';
       inp.style.background='var(--ok-bg)';
     } else {
-      inp.oninput=function(){currentSel[cur]=inp.value};
+      inp.oninput=function(){currentSel[cur]=inp.value;saveDraft()};
     }
     wrap.appendChild(inp);
     opts.appendChild(wrap)
@@ -708,6 +864,7 @@ function renderQ(){
 function pickOption(i){
   if(chk||qStats[cur].solved)return;
   currentSel[cur]=i;
+  saveDraft();
   document.querySelectorAll('.option').forEach(function(el){
     el.classList.toggle('selected',parseInt(el.dataset.i,10)===i)
   })
@@ -734,6 +891,7 @@ function checkAnswer(){
         if(i===q.correct)el.classList.add('correct')
       });
       qStats[cur].solved=true;
+      saveDraft();
       var rb=document.getElementById('resultBox');
       rb.className='result ok';
       rb.textContent='✅ Верно! Попыток: '+qStats[cur].attempts;
@@ -746,6 +904,7 @@ function checkAnswer(){
         el.classList.remove('selected','correct');
         if(i===chosen)el.classList.add('wrong')
       });
+      saveDraft();
       var rb2=document.getElementById('resultBox');
       rb2.className='result fail';
       rb2.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой вариант.';
@@ -773,6 +932,7 @@ function checkAnswer(){
     inp.disabled=true;
     inp.style.borderColor='var(--accent)';
     inp.style.background='var(--info-bg)';
+    saveDraft();
     var rb3=document.getElementById('resultBox');
     rb3.className='result ok';
     rb3.style.background='var(--warn-bg)';
@@ -786,11 +946,14 @@ function checkAnswer(){
   document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+activeTest.questions.length+' • Попыток: '+qStats[cur].attempts
 }
 
-function nextQuestion(){if(cur<activeTest.questions.length-1){cur++;renderQ()}else finishTest()}
-function prevQuestion(){if(cur>0){cur--;renderQ()}}
+function nextQuestion(){if(cur<activeTest.questions.length-1){cur++;saveDraft();renderQ()}else finishTest(false)}
+function prevQuestion(){if(cur>0){cur--;saveDraft();renderQ()}}
 
-function finishTest(){
+function finishTest(timeUp){
+  stopTimer();
   if(!activeTest){alert('Ошибка: тест не зафиксирован');return}
+  if(timeUp)alert('⏱️ Время вышло! Тест завершён автоматически.');
+
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.remove('hidden');
   var tot=qStats.reduce(function(s,q){return s+q.attempts},0);
@@ -801,9 +964,14 @@ function finishTest(){
     if(q.type==='choice'&&qStats[i].solved)correctCount++;
   });
 
+  var passScore=activeTest.passScore||60;
+  var pct=activeTest.questions.length?Math.round(correctCount/activeTest.questions.length*100):0;
+  var passed=pct>=passScore;
+
   document.getElementById('finalStats').innerHTML=
     '<div class="stat"><b>'+activeTest.questions.length+'</b>вопросов</div>'+
     '<div class="stat"><b>'+correctCount+'</b>верно (выбор)</div>'+
+    '<div class="stat"><b>'+pct+'%</b>результат</div>'+
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
@@ -826,9 +994,7 @@ function finishTest(){
       var ua=st.choices.length?st.choices[st.choices.length-1]:'';
       contentHtml='<div>'+
         '<div class="q-review-opt chosen"><b>Ваш ответ:</b> '+esc(ua||'(не введён)')+'</div>'+
-        '<div class="q-review-opt" style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn)">'+
-          '📝 <b>Правильный ответ появится после проверки администратором</b>'+
-        '</div>'+
+        '<div class="q-review-opt" style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn)">📝 Правильный ответ появится после проверки</div>'+
       '</div>'
     }
     var imgHtml=q.image&&q.image.trim()?'<img class="q-image" src="'+esc(q.image)+'" style="max-height:200px" onerror="this.style.display=\'none\'">':'';
@@ -842,7 +1008,6 @@ function finishTest(){
   }).join('');
   document.getElementById('finalReview').innerHTML='<h3>📝 Разбор ответов</h3>'+reviewHtml;
 
-  // Все поля защищены от undefined
   var details=activeTest.questions.map(function(q,i){
     return {
       type:q.type||'choice',
@@ -873,25 +1038,25 @@ function finishTest(){
     elapsed:el,
     checkStatus:hasText?'pending':'checked',
     correctCount:correctCount,
+    passScore:passScore,
     details:details
   };
 
   var id=genId();
-  var cleanRec=cleanForFirestore(rec);
-  db.collection('history').doc(id).set(cleanRec).then(function(){
-    // НЕ добавляем вручную в CACHE.history — это сделает onSnapshot
-    // (иначе будет дубль)
+  db.collection('history').doc(id).set(cleanForFirestore(rec)).then(function(){
+    clearDraft(activeTest.id);
     updatePendingBadge();
-    console.log('✓ Результат сохранён:',activeTest.name,'| checkStatus:',cleanRec.checkStatus);
+    console.log('✓ Результат сохранён:',activeTest.name,'| %',pct,'| pass',passScore);
   }).catch(function(e){
     console.error('Ошибка сохранения:',e);
     alert('Результат не сохранён: '+e.message)
   })
 }
-/* === МОИ РЕЗУЛЬТАТЫ (для не-админа) === */
+/* === МОИ РЕЗУЛЬТАТЫ — ТОЛЬКО СВОИ === */
 function renderMyResults(){
   if(currentUser.role==='admin'){switchTab('tests');return}
   var list=document.getElementById('myResultsList');
+  // СТРОГО фильтруем по текущему пользователю
   var my=getHistory().filter(function(r){return r.user===currentUser.login});
   my.sort(function(a,b){
     if(a.checkStatus==='pending'&&b.checkStatus!=='pending')return -1;
@@ -901,6 +1066,7 @@ function renderMyResults(){
   if(!my.length){list.innerHTML='<div class="empty-state">📭 Вы ещё не проходили тесты</div>';return}
   list.innerHTML=my.map(function(r){
     var statusBadge='',scoreText='';
+    var passScore=r.passScore||60;
     if(r.checkStatus==='pending'){
       statusBadge='<span class="status-badge status-pending">⏳ На проверке</span>';
       scoreText='<span style="color:var(--warn)">Письменные ответы проверяются</span>'
@@ -908,7 +1074,7 @@ function renderMyResults(){
       var total=r.questions,correct=r.correctCount||0;
       var pct=total?Math.round(correct/total*100):0;
       scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted);font-size:.9em">правильных ('+pct+'%)</span>';
-      statusBadge='<span class="status-badge '+(pct>=60?'status-checked':'status-fail')+'">'+(pct>=60?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+      statusBadge='<span class="status-badge '+(pct>=passScore?'status-checked':'status-fail')+'">'+(pct>=passScore?'✓ Зачтено':'✗ Не зачтено')+'</span>'
     }
     return '<div class="test-card">'+
       '<div class="tc-info">'+
@@ -924,12 +1090,17 @@ function renderMyResults(){
 function viewMyResult(id){
   var r=CACHE.history.find(function(x){return x._id===id});
   if(!r)return;
+  // Защита: пользователь может смотреть только свои
+  if(currentUser.role!=='admin'&&r.user!==currentUser.login){
+    alert('Это не ваш результат');return
+  }
   var pct=r.questions?Math.round((r.correctCount||0)/r.questions*100):0;
+  var passScore=r.passScore||60;
   var statusLine='';
   if(r.checkStatus==='pending'){
     statusLine='<span class="status-badge status-pending">⏳ Письменные на проверке</span>'
   } else {
-    statusLine='<span class="result-score">'+(r.correctCount||0)+'/'+r.questions+'</span> <span style="color:var(--muted)">правильных ('+pct+'%)</span> <span class="status-badge '+(pct>=60?'status-checked':'status-fail')+'">'+(pct>=60?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+    statusLine='<span class="result-score">'+(r.correctCount||0)+'/'+r.questions+'</span> <span style="color:var(--muted)">правильных ('+pct+'%)</span> <span class="status-badge '+(pct>=passScore?'status-checked':'status-fail')+'">'+(pct>=passScore?'✓ Зачтено':'✗ Не зачтено')+'</span>'
   }
   var html='<div style="padding:20px;max-width:800px;margin:0 auto">'+
     '<button class="small secondary" onclick="closeResultView()" style="margin-bottom:16px">← Назад</button>'+
@@ -946,7 +1117,7 @@ function closeResultView(){
   if(o)o.remove()
 }
 
-/* === ТЕСТЫ НА ПРОВЕРКУ (админ) === */
+/* === НА ПРОВЕРКУ (админ) === */
 function renderPending(){
   updatePendingBadge();
   var list=document.getElementById('pendingList');
@@ -1015,14 +1186,15 @@ function renderResults(){
   list.innerHTML=filtered.map(function(r){
     var who=r.userRole==='guest'?'👤 '+esc(r.fio)+' (гость)':'👤 '+esc(r.user);
     var statusBadge='',scoreText='';
+    var passScore=r.passScore||60;
     if(r.checkStatus==='pending'){
       statusBadge='<span class="status-badge status-pending">⏳ На проверке</span>';
       scoreText='<span style="color:var(--warn)">Ожидает проверки</span>'
     } else {
       var total=r.questions,correct=r.correctCount||0;
       var pct=total?Math.round(correct/total*100):0;
-      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'%)</span>';
-      statusBadge='<span class="status-badge '+(pct>=60?'status-checked':'status-fail')+'">'+(pct>=60?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'%, порог '+passScore+'%)</span>';
+      statusBadge='<span class="status-badge '+(pct>=passScore?'status-checked':'status-fail')+'">'+(pct>=passScore?'✓ Зачтено':'✗ Не зачтено')+'</span>'
     }
     return '<div class="history-item" data-id="'+r._id+'">'+
       '<div class="history-head">'+
@@ -1046,19 +1218,18 @@ function toggleAdminResult(id){
   if(d)d.classList.toggle('hidden')
 }
 
-/* === УДАЛЕНИЕ ОДНОГО РЕЗУЛЬТАТА === */
+/* === УДАЛЕНИЕ === */
 function deleteOneResult(id){
   var r=CACHE.history.find(function(x){return x._id===id});
   if(!r)return;
   var who=r.userRole==='guest'?r.fio:r.user;
   if(!confirm('Удалить результат «'+r.testName+'» от '+who+'?'))return;
   db.collection('history').doc(id).delete().then(function(){
-    // CACHE.history обновится через onSnapshot
     updatePendingBadge();
   }).catch(function(e){alert('Ошибка удаления: '+e.message)})
 }
 
-/* === ОБЩИЙ РАЗБОР РЕЗУЛЬТАТА === */
+/* === РАЗБОР РЕЗУЛЬТАТА === */
 function buildResultDetailHTML(r,isAdmin){
   var details=r.details||[];
   if(!details.length)return '<p style="color:var(--muted)">Детали недоступны</p>';
@@ -1138,10 +1309,107 @@ function markTextAnswer(resultId,questionIdx,value){
   db.collection('history').doc(resultId).update(cleanForFirestore({
     details:r.details,correctCount:r.correctCount,checkStatus:r.checkStatus
   })).then(function(){
-    // Перерисовка произойдёт через onSnapshot
     updatePendingBadge();
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
+/* === СТАТИСТИКА ПО ВОПРОСАМ (админ) === */
+function renderStats(){
+  var tests=getTests();
+  var sel=document.getElementById('statsTestFilter');
+  var cur=sel.value;
+  sel.innerHTML='<option value="">— выберите тест —</option>'+tests.map(function(t){
+    return '<option value="'+t._id+'"'+(t._id===cur?' selected':'')+'>'+esc(t.name)+'</option>'
+  }).join('');
+  if(!cur&&tests.length){cur=tests[0]._id;sel.value=cur}
+
+  var content=document.getElementById('statsContent');
+  if(!cur){content.innerHTML='<div class="empty-state">Выберите тест</div>';return}
+
+  var test=CACHE.tests.find(function(t){return t._id===cur});
+  if(!test){content.innerHTML='<div class="empty-state">Тест не найден</div>';return}
+
+  // Собираем все результаты по этому тесту
+  var results=CACHE.history.filter(function(r){
+    return r.testId===cur && r.details && r.details.length
+  });
+
+  if(!results.length){
+    content.innerHTML='<div class="empty-state">📊 По этому тесту пока нет результатов</div>';return
+  }
+
+  // Общая сводка
+  var totalRuns=results.length;
+  var checkedRuns=results.filter(function(r){return r.checkStatus==='checked'}).length;
+  var pendingRuns=results.filter(function(r){return r.checkStatus==='pending'}).length;
+  var totalCorrectAll=0;
+  var totalQuestionsAll=0;
+  results.forEach(function(r){
+    totalCorrectAll+=(r.correctCount||0);
+    totalQuestionsAll+=r.questions;
+  });
+  var avgPct=totalQuestionsAll?Math.round(totalCorrectAll/totalQuestionsAll*100):0;
+
+  var headerHtml='<div class="summary-grid" style="margin-bottom:20px">'+
+    '<div class="summary-box"><div class="val">'+totalRuns+'</div><div class="lbl">всего прохождений</div></div>'+
+    '<div class="summary-box"><div class="val">'+checkedRuns+'</div><div class="lbl">проверено</div></div>'+
+    (pendingRuns>0?'<div class="summary-box" style="background:var(--warn-bg)"><div class="val" style="color:var(--warn)">'+pendingRuns+'</div><div class="lbl" style="color:var(--warn)">на проверке</div></div>':'')+
+    '<div class="summary-box"><div class="val">'+avgPct+'%</div><div class="lbl">средний результат</div></div>'+
+  '</div>';
+
+  // Статистика по каждому вопросу
+  var qStatsArr=(test.questions||[]).map(function(q,qi){
+    var asked=0;       // сколько раз вопрос был задан (по всем результатам, где есть этот вопрос)
+    var correct=0;     // сколько раз ответили верно
+    var attemptsSum=0; // сумма попыток на вопрос
+
+    results.forEach(function(r){
+      var d=r.details[qi];
+      if(!d)return;
+      asked++;
+      attemptsSum+=d.attempts||0;
+      if(d.type==='choice'){
+        if(d.solved)correct++;
+      } else {
+        if(d.adminCorrect===true)correct++;
+      }
+    });
+
+    var pct=asked?Math.round(correct/asked*100):0;
+    var avgAttempts=asked?(attemptsSum/asked).toFixed(1):0;
+    return {
+      question:q.question||'(без текста)',
+      type:q.type||'choice',
+      asked:asked,
+      correct:correct,
+      pct:pct,
+      avgAttempts:avgAttempts
+    }
+  });
+
+  var questionsHtml=qStatsArr.map(function(s,i){
+    var color=s.pct>=80?'var(--ok)':s.pct>=50?'var(--warn)':'var(--fail)';
+    var tb=s.type==='text'?'✍️':'📋';
+    return '<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:var(--surface)">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:200px">'+
+          '<div style="font-weight:600;margin-bottom:4px">'+(i+1)+'. '+esc(s.question)+' '+tb+'</div>'+
+          '<div style="font-size:.85em;color:var(--muted)">Задан '+s.asked+' раз • верно '+s.correct+' • в среднем '+s.avgAttempts+' попыток</div>'+
+        '</div>'+
+        '<div style="text-align:right;min-width:80px">'+
+          '<div style="font-size:1.4em;font-weight:700;color:'+color+'">'+s.pct+'%</div>'+
+          '<div style="font-size:.75em;color:var(--muted)">верных</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="stat-bar"><div class="stat-bar-fill" style="width:'+s.pct+'%;background:'+color+'"></div></div>'+
+    '</div>'
+  }).join('');
+
+  content.innerHTML=headerHtml+
+    '<h3>Статистика по вопросам</h3>'+
+    '<p style="color:var(--muted);font-size:.88em;margin-bottom:14px">Вопросы, где мало верных ответов (красные/жёлтые) — самые сложные. Возможно, стоит переформулировать или добавить пояснение.</p>'+
+    questionsHtml
+}
+
 /* === ПОЛЬЗОВАТЕЛИ === */
 function renderUsers(){
   var users=getUsers();var h=getHistory();
@@ -1234,14 +1502,14 @@ function submitChangePass(){
   }).catch(function(e){msg.textContent='Ошибка: '+e.message})
 }
 
-/* === РЕДАКТОР === */
+/* === РЕДАКТОР — ЗАГОЛОВОК И НАСТРОЙКИ === */
 var editTestId=null;
 
 function createTest(){
   var name=prompt('Название теста:','Новый тест');
   if(!name||!name.trim())return;
   var id=genId();
-  var nt={name:name.trim(),questions:[]};
+  var nt={name:name.trim(),questions:[],timeLimit:0,passScore:60,shuffle:'none'};
   db.collection('tests').doc(id).set(nt).then(function(){
     CACHE.tests.push(Object.assign({_id:id},nt));
     editTestId=id;switchTab('editor')
@@ -1262,12 +1530,17 @@ function deleteTest(id){
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
+/* === РЕДАКТОР — ОСНОВНАЯ ЧАСТЬ === */
 function renderEditor(){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t){switchTab('tests');return}
   document.getElementById('editorTitle').textContent='Редактор: '+t.name;
   document.getElementById('editorInfo').textContent='Вопросов: '+(t.questions||[]).length;
   document.getElementById('editorTestName').value=t.name;
+  document.getElementById('editorTimeLimit').value=t.timeLimit||0;
+  document.getElementById('editorPassScore').value=t.passScore||60;
+  document.getElementById('editorShuffle').value=t.shuffle||'none';
+
   var list=document.getElementById('editorList');
   if(!t.questions.length){list.innerHTML='<div class="empty-state">Нет вопросов — добавьте первый</div>';return}
   list.innerHTML=t.questions.map(function(q,qi){
@@ -1316,6 +1589,7 @@ function renderEditor(){
 function saveTestField(updates){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
+  Object.assign(t,updates);
   db.collection('tests').doc(editTestId).update(cleanForFirestore(updates)).catch(function(e){alert('Ошибка: '+e.message)})
 }
 function updateTestName(v){
@@ -1325,6 +1599,18 @@ function updateTestName(v){
   document.getElementById('editorTitle').textContent='Редактор: '+v;
   saveTestField({name:v})
 }
+function updateTestTimeLimit(v){
+  var n=parseInt(v,10);if(isNaN(n)||n<0)n=0;
+  saveTestField({timeLimit:n})
+}
+function updateTestPassScore(v){
+  var n=parseInt(v,10);if(isNaN(n)||n<0)n=0;if(n>100)n=100;
+  saveTestField({passScore:n})
+}
+function updateTestShuffle(v){
+  saveTestField({shuffle:v})
+}
+
 function addQuestion(){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
   t.questions.push({type:'choice',question:'',options:['','','',''],correct:0,correctText:'',image:'',explanation:'',explanationImage:''});
