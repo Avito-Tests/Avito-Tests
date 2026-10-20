@@ -95,11 +95,12 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .check-btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .stat-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:4px 0}
 .stat-bar-fill{height:100%;background:linear-gradient(90deg,var(--fail),var(--warn),var(--ok))}
-/* Светлый аватар и имя пользователя */
-.avatar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#0f172a;font-weight:700;font-size:1em;flex-shrink:0;vertical-align:middle;border:2px solid rgba(255,255,255,.15)}
+/* Аватар */
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#0f172a;font-weight:700;font-size:1em;flex-shrink:0;vertical-align:middle;border:2px solid rgba(255,255,255,.15);overflow:hidden;background-size:cover;background-position:center}
 .avatar-admin{background:#fcd34d;color:#78350f;border-color:#fbbf24}
-.avatar-guest{background:#4ade80;color:#14532d;border-color:#22c55e}
+.avatar-guest{background:#4ade80;color:#14532d;border-color:#22c5a5}
 .avatar-user{background:#93c5fd;color:#1e3a8a;border-color:#60a5fa}
+.avatar-lg{width:80px;height:80px;font-size:2em;border-width:3px}
 .user-line{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:var(--card);border-radius:8px;border:1px solid var(--border)}
 .user-line .user-info{display:flex;flex-direction:column;gap:2px}
 .user-line .name{font-weight:700;color:var(--text);font-size:1.05em;line-height:1.2}
@@ -107,6 +108,22 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .tag-guest{background:var(--ok-bg);color:var(--ok)}
 .tag-user{background:var(--info-bg);color:var(--info)}
 .tag-admin{background:var(--warn-bg);color:var(--warn)}
+/* Кнопка «Аккаунт» */
+.account-btn{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 12px 6px 6px;cursor:pointer;color:var(--text);font-weight:600;transition:.15s}
+.account-btn:hover{border-color:var(--accent);background:var(--surface)}
+.account-btn .name-short{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Профиль / статистика */
+.account-header{display:flex;align-items:center;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.account-avatar-wrap{position:relative}
+.account-avatar-edit{position:absolute;bottom:-4px;right:-4px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#0f172a;border:2px solid var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9em;padding:0}
+.account-avatar-edit:hover{background:var(--accent-hover)}
+.account-info h2{margin:0 0 6px}
+.account-info .meta{color:var(--muted);font-size:.9em}
+.stat-toggle{display:flex;gap:4px;background:var(--surface);padding:4px;border-radius:10px;margin-bottom:16px;width:fit-content}
+.stat-toggle button{padding:8px 16px;background:none;color:var(--muted);border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:.9em}
+.stat-toggle button.active{background:var(--card);color:var(--accent)}
+.attempt-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
+.attempt-row:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -142,15 +159,12 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 
 <div id="app" class="hidden">
   <div class="userbar">
-    <div style="display:flex;align-items:center;gap:12px">
+    <button class="account-btn" onclick="switchTab('account')">
       <div id="currentAvatar" class="avatar">?</div>
-      <div>
-        <div style="font-size:.78em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600">Вы вошли как</div>
-        <div><b id="currentUser" style="font-size:1.15em"></b><span id="currentRoleBadge" class="role-badge"></span></div>
-      </div>
-    </div>
+      <span class="name-short" id="currentUser"></span>
+      <span style="color:var(--muted);font-size:.85em">▾</span>
+    </button>
     <div style="display:flex;gap:8px">
-      <button id="changePassBtn" class="small secondary hidden" onclick="openChangePassModal()">🔑</button>
       <button class="small secondary" onclick="logout()">Выйти</button>
     </div>
   </div>
@@ -163,6 +177,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
     <button class="tab admin-only hidden" data-tab="results" onclick="switchTab('results')">👁 Все результаты</button>
     <button class="tab admin-only hidden" data-tab="stats" onclick="switchTab('stats')">📈 Статистика</button>
     <button class="tab admin-only hidden" data-tab="users" onclick="switchTab('users')">👥 Пользователи</button>
+    <button class="tab hidden" data-tab="account" onclick="switchTab('account')">👤 Аккаунт</button>
   </div>
   <div id="tab-tests">
     <div id="testsListView">
@@ -238,6 +253,28 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
     </div>
   </div>
   <div id="tab-users" class="hidden"><div class="card"><h2>Пользователи</h2><div id="usersList"></div></div></div>
+  <div id="tab-account" class="hidden">
+    <div class="card">
+      <div class="account-header">
+        <div class="account-avatar-wrap">
+          <div id="accountAvatar" class="avatar avatar-lg">?</div>
+          <button class="account-avatar-edit" onclick="openAvatarModal()" title="Сменить аватар">✏️</button>
+        </div>
+        <div class="account-info">
+          <h2 id="accountName"></h2>
+          <div class="meta" id="accountMeta"></div>
+        </div>
+      </div>
+      <div id="accountAdminToggle" class="stat-toggle hidden">
+        <button data-scope="self" onclick="setAccountScope('self')">👤 Мои результаты</button>
+        <button data-scope="all" onclick="setAccountScope('all')">🌍 Все пользователи</button>
+      </div>
+      <h3 id="accountStatsTitle">Моя статистика</h3>
+      <div class="summary-grid" id="accountStats"></div>
+      <h3>Прохождения</h3>
+      <div id="accountAttempts"></div>
+    </div>
+  </div>
   <div id="tab-editor" class="hidden">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
@@ -267,6 +304,21 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
     <div class="toolbar" style="justify-content:flex-end">
       <button class="secondary" onclick="closeChangePassModal()">Отмена</button>
       <button onclick="submitChangePass()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div id="avatarModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAvatarModal()">
+  <div class="modal">
+    <h3>Свой аватар</h3>
+    <p style="color:var(--muted);font-size:.88em;margin-top:0">Загрузите файл (до 200 КБ) или вставьте URL картинки.</p>
+    <div class="form-row"><label>URL картинки</label><input type="text" id="avatarUrlInput" name="app_avatar_url" autocomplete="off" placeholder="https://..."></div>
+    <div class="form-row"><label>или файл с диска</label><input type="file" id="avatarFileInput" accept="image/*" onchange="loadAvatarFile(event)"></div>
+    <div id="avatarPreviewWrap" style="text-align:center;margin:14px 0"></div>
+    <div class="toolbar" style="justify-content:flex-end">
+      <button class="secondary" onclick="resetAvatar()">Сбросить (буква)</button>
+      <button class="secondary" onclick="closeAvatarModal()">Отмена</button>
+      <button onclick="saveAvatar()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -353,8 +405,6 @@ function hideLoading(){
   var l=document.getElementById('loadBox');
   if(l)l.remove()
 }
-
-/* === ПЕРЕМЕШИВАНИЕ === */
 function shuffleArray(arr){
   var a=arr.slice();
   for(var i=a.length-1;i>0;i--){
@@ -364,7 +414,7 @@ function shuffleArray(arr){
   return a
 }
 
-/* === АВАТАР И СТРОКА ПОЛЬЗОВАТЕЛЯ === */
+/* === АВАТАР === */
 function getInitial(name){
   var n=String(name||'?').trim();
   return n?n.charAt(0).toUpperCase():'?'
@@ -374,20 +424,32 @@ function getAvatarClass(role){
   if(role==='guest')return 'avatar avatar-guest';
   return 'avatar avatar-user'
 }
-/* Красивая строка пользователя для карточек результатов */
+/* HTML аватара: если есть user.avatarUrl — картинка, иначе буква */
+function avatarHTML(user,size){
+  var cls=getAvatarClass(user.role)+((size==='lg')?' avatar-lg':'');
+  var style='';
+  if(user.avatarUrl){
+    style=';background-image:url(\''+esc(user.avatarUrl)+'\');color:transparent;background-size:cover;background-position:center';
+  }
+  return '<div class="'+cls+'" style="'+style.slice(1)+'">'+(user.avatarUrl?'':getInitial(user.login))+'</div>'
+}
+/* Строка пользователя для карточек результатов */
 function makeUserLine(r){
   var name=r.userRole==='guest'?(r.fio||r.user):r.user;
   var initial=getInitial(name);
   var avClass=getAvatarClass(r.userRole);
+  var style='';
+  if(r.userAvatar){
+    style=';background-image:url(\''+esc(r.userAvatar)+'\');color:transparent;background-size:cover;background-position:center';
+  }
   var tag='';
   if(r.userRole==='guest')tag='<span class="tag tag-guest">Гость</span>';
   else if(r.userRole==='admin')tag='<span class="tag tag-admin">Админ</span>';
   else tag='<span class="tag tag-user">Аккаунт</span>';
   return '<div class="user-line">'+
-    '<div class="'+avClass+'">'+initial+'</div>'+
+    '<div class="'+avClass+'" style="'+style.slice(1)+'">'+(r.userAvatar?'':initial)+'</div>'+
     '<div class="user-info">'+
-      '<span class="name">'+esc(name)+'</span>'+
-      tag+
+      '<span class="name">'+esc(name)+'</span>'+tag+
     '</div>'+
   '</div>'
 }
@@ -409,7 +471,7 @@ function ensureAdminAndDemos(){
   var promises=[];
   if(CACHE.users.length===0){
     var adminId=genId();
-    var admin={login:'admin',passHash:hashPass('admin'),role:'admin',createdAt:new Date().toISOString()};
+    var admin={login:'admin',passHash:hashPass('admin'),role:'admin',createdAt:new Date().toISOString(),avatarUrl:''};
     promises.push(db.collection('users').doc(adminId).set(admin).then(function(){
       CACHE.users.push(Object.assign({_id:adminId},admin))
     }))
@@ -440,7 +502,7 @@ function findUserByLogin(login){
 }
 function loginExists(login){return !!findUserByLogin(login)}
 
-/* === ПОДПИСКА НА ИЗМЕНЕНИЯ === */
+/* === ПОДПИСКА (без перерисовки — иначе проверка «выкидывает») === */
 function subscribeToHistory(){
   db.collection('history').onSnapshot(function(snap){
     var changed=false;
@@ -461,13 +523,15 @@ function subscribeToHistory(){
     });
     if(changed){
       updatePendingBadge();
+      // Перерисовка вкладки только на added/removed (когда реально пришёл новый или удалён),
+      // но НЕ на modified — иначе проверка письменных «выкидывает» из карточки.
       var activeTab=document.querySelector('.tab.active');
       if(activeTab){
         var name=activeTab.dataset.tab;
         if(name==='results'&&currentUser&&currentUser.role==='admin')renderResults();
-        if(name==='pending'&&currentUser&&currentUser.role==='admin')renderPending();
         if(name==='myresults'&&currentUser&&currentUser.role!=='admin')renderMyResults();
         if(name==='stats'&&currentUser&&currentUser.role==='admin')renderStats();
+        // pending не перерисовываем — там точечное обновление в markTextAnswer
       }
     }
   },function(error){console.error('Ошибка подписки:',error)})
@@ -482,6 +546,7 @@ function setSession(s){s?localStorage.setItem(SESSION_KEY,JSON.stringify(s)):loc
 var currentUser=null;
 var currentTest=null;
 var activeTest=null;
+var accountScope='self'; // для админа: 'self' | 'all'
 
 /* === ИНИЦИАЛИЗАЦИЯ === */
 function initApp(){
@@ -551,7 +616,7 @@ function handleRegister(e){
   if(pass!==pass2){showMsg('authMsg','err','Пароли не совпадают');return}
   if(loginExists(login)){showMsg('authMsg','err','Логин уже занят');return}
   var id=genId();
-  var nu={login:login,passHash:hashPass(pass),role:'user',createdAt:new Date().toISOString()};
+  var nu={login:login,passHash:hashPass(pass),role:'user',createdAt:new Date().toISOString(),avatarUrl:''};
   db.collection('users').doc(id).set(nu).then(function(){
     CACHE.users.push(Object.assign({_id:id},nu));
     setSession({type:'user',login:nu.login});
@@ -577,17 +642,16 @@ function enterApp(u){
   currentUser=u;
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  // Светлый аватар с первой буквой имени
+  // Аватар в шапке
   var av=document.getElementById('currentAvatar');
-  av.textContent=getInitial(u.login);
   av.className=getAvatarClass(u.role);
-  document.getElementById('currentUser').textContent=u.login;
-  var b=document.getElementById('currentRoleBadge');
-  if(u.role==='admin'){b.className='role-badge role-admin';b.textContent='Админ'}
-  else if(u.role==='guest'){b.className='role-badge role-guest';b.textContent='Гость'}
-  else{b.className='role-badge role-user';b.textContent='Пользователь'}
+  av.textContent=u.avatarUrl?'':getInitial(u.login);
+  av.style.backgroundImage=u.avatarUrl?'url(\''+u.avatarUrl+'\')':'';
+  av.style.backgroundSize='cover';
+  av.style.backgroundPosition='center';
+  av.style.color=u.avatarUrl?'transparent':'';
 
-  document.getElementById('changePassBtn').classList.toggle('hidden',u.role!=='admin');
+  document.getElementById('currentUser').textContent=u.login;
 
   document.querySelectorAll('.admin-only').forEach(function(el){
     el.classList.toggle('hidden',u.role!=='admin')
@@ -615,7 +679,7 @@ function switchTab(name){
   document.querySelectorAll('.tab[data-tab]').forEach(function(t){
     t.classList.toggle('active',t.dataset.tab===name)
   });
-  ['tests','myresults','pending','results','stats','users','editor'].forEach(function(n){
+  ['tests','myresults','pending','results','stats','users','account','editor'].forEach(function(n){
     var el=document.getElementById('tab-'+n);
     if(el)el.classList.toggle('hidden',n!==name)
   });
@@ -625,6 +689,7 @@ function switchTab(name){
   if(name==='results')renderResults();
   if(name==='stats')renderStats();
   if(name==='users')renderUsers();
+  if(name==='account')renderAccount();
   if(name==='editor')renderEditor()
 }
 
@@ -1079,6 +1144,7 @@ function finishTest(timeUp){
     testName:activeTest.name,
     user:currentUser.login,
     userRole:currentUser.role,
+    userAvatar:currentUser.avatarUrl||'',
     fio:currentUser.role==='guest'?(currentUser.fio||''):'',
     date:new Date().toLocaleString('ru-RU'),
     timestamp:Date.now(),
@@ -1168,7 +1234,9 @@ function closeResultView(){
   if(o)o.remove()
 }
 
-/* === НА ПРОВЕРКУ (админ) === */
+/* === НА ПРОВЕРКУ (админ) — с сохранением раскрытых карточек === */
+var _openPendingIds={};
+
 function renderPending(){
   updatePendingBadge();
   var list=document.getElementById('pendingList');
@@ -1179,6 +1247,7 @@ function renderPending(){
     return
   }
   list.innerHTML=pending.map(function(r){
+    var hiddenClass=_openPendingIds[r._id]?'':'hidden';
     return '<div class="history-item" data-id="'+r._id+'">'+
       '<div class="history-head">'+
         '<div style="flex:1">'+
@@ -1191,14 +1260,16 @@ function renderPending(){
           '<button class="small danger" onclick="deleteOneResult(\''+r._id+'\')">🗑</button>'+
         '</div>'+
       '</div>'+
-      '<div id="pdet_'+r._id+'" class="hidden history-detail"><div id="pendRes_'+r._id+'">'+buildResultDetailHTML(r,true)+'</div></div>'+
+      '<div id="pdet_'+r._id+'" class="'+hiddenClass+' history-detail"><div id="pendRes_'+r._id+'">'+buildResultDetailHTML(r,true)+'</div></div>'+
     '</div>'
   }).join('')
 }
 
 function togglePendingResult(id){
   var d=document.getElementById('pdet_'+id);
-  if(d)d.classList.toggle('hidden')
+  if(!d)return;
+  d.classList.toggle('hidden');
+  _openPendingIds[id]=!d.classList.contains('hidden')
 }
 
 /* === ВСЕ РЕЗУЛЬТАТЫ (админ) === */
@@ -1347,6 +1418,7 @@ function buildResultDetailHTML(r,isAdmin){
   return summaryHtml+detailsHtml
 }
 
+/* === ПРОВЕРКА ПИСЬМЕННЫХ — с точечным обновлением (не выкидывает) === */
 function markTextAnswer(resultId,questionIdx,value){
   var r=CACHE.history.find(function(x){return x._id===resultId});
   if(!r)return;
@@ -1358,10 +1430,50 @@ function markTextAnswer(resultId,questionIdx,value){
   });
   r.correctCount=correct;
   r.checkStatus=hasText?(allChecked?'checked':'pending'):'checked';
+
   db.collection('history').doc(resultId).update(cleanForFirestore({
     details:r.details,correctCount:r.correctCount,checkStatus:r.checkStatus
   })).then(function(){
     updatePendingBadge();
+
+    // Точечное обновление — только блок этого результата
+    var box=document.getElementById('pendRes_'+resultId);
+    if(box)box.innerHTML=buildResultDetailHTML(r,true);
+
+    var abox=document.getElementById('adminRes_'+resultId);
+    if(abox)abox.innerHTML=buildResultDetailHTML(r,true);
+
+    // Если полностью проверен — убираем из «На проверку»
+    if(r.checkStatus!=='pending'){
+      var pitem=document.querySelector('#pendingList .history-item[data-id="'+resultId+'"]');
+      if(pitem)pitem.remove();
+      delete _openPendingIds[resultId];
+      if(!document.querySelectorAll('#pendingList .history-item').length){
+        var pl=document.getElementById('pendingList');
+        if(pl)pl.innerHTML='<div class="empty-state">✅ Все результаты проверены</div>'
+      }
+    }
+
+    // Обновляем шапку в «Все результаты», если карточка там
+    var ritem=document.querySelector('#historyList .history-item[data-id="'+resultId+'"]');
+    if(ritem){
+      var meta=ritem.querySelector('.h-meta');
+      if(meta){
+        var passCount=typeof r.passCount==='number'?r.passCount:0;
+        var sc='',sb='';
+        if(r.checkStatus==='pending'){
+          sc='<span style="color:var(--warn)">Ожидает проверки</span>';
+          sb='<span class="status-badge status-pending">⏳ На проверке</span>'
+        } else {
+          var total=r.questions,cc=r.correctCount||0;
+          var pct=total?Math.round(cc/total*100):0;
+          var passed=passCount>0?cc>=passCount:true;
+          sc='<span class="result-score">'+cc+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'%'+(passCount>0?', порог '+passCount+' верных':'')+')</span>';
+          sb='<span class="status-badge '+(passed?'status-checked':'status-fail')+'">'+(passed?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+        }
+        meta.innerHTML=r.questions+' вопр. • '+r.totalAttempts+' попыток • '+sc+' '+sb;
+      }
+    }
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 /* === СТАТИСТИКА ПО ВОПРОСАМ (админ) === */
@@ -1407,32 +1519,18 @@ function renderStats(){
   '</div>';
 
   var qStatsArr=(test.questions||[]).map(function(q,qi){
-    var asked=0;
-    var correct=0;
-    var attemptsSum=0;
-
+    var asked=0,correct=0,attemptsSum=0;
     results.forEach(function(r){
       var d=r.details[qi];
       if(!d)return;
       asked++;
       attemptsSum+=d.attempts||0;
-      if(d.type==='choice'){
-        if(d.solved)correct++;
-      } else {
-        if(d.adminCorrect===true)correct++;
-      }
+      if(d.type==='choice'){if(d.solved)correct++}
+      else{if(d.adminCorrect===true)correct++}
     });
-
     var pct=asked?Math.round(correct/asked*100):0;
     var avgAttempts=asked?(attemptsSum/asked).toFixed(1):0;
-    return {
-      question:q.question||'(без текста)',
-      type:q.type||'choice',
-      asked:asked,
-      correct:correct,
-      pct:pct,
-      avgAttempts:avgAttempts
-    }
+    return {question:q.question||'(без текста)',type:q.type||'choice',asked:asked,correct:correct,pct:pct,avgAttempts:avgAttempts}
   });
 
   var questionsHtml=qStatsArr.map(function(s,i){
@@ -1455,7 +1553,7 @@ function renderStats(){
 
   content.innerHTML=headerHtml+
     '<h3>Статистика по вопросам</h3>'+
-    '<p style="color:var(--muted);font-size:.88em;margin-bottom:14px">Красные/жёлтые вопросы — самые сложные. Возможно, стоит переформулировать или добавить пояснение.</p>'+
+    '<p style="color:var(--muted);font-size:.88em;margin-bottom:14px">Красные/жёлтые вопросы — самые сложные. Возможно, стоит переформулировать.</p>'+
     questionsHtml
 }
 
@@ -1475,9 +1573,10 @@ function renderUsers(){
       var isSelf=u.login===currentUser.login;
       var isRootAdmin=u.login==='admin';
       var canDel=!isSelf&&!isRootAdmin;
+      var avStyle=u.avatarUrl?'background-image:url(\''+esc(u.avatarUrl)+'\');color:transparent;background-size:cover;background-position:center':'';
       return '<tr style="border-bottom:1px solid var(--border)">'+
         '<td style="padding:10px"><div style="display:flex;align-items:center;gap:10px">'+
-          '<div class="'+getAvatarClass(u.role)+'">'+getInitial(u.login)+'</div>'+
+          '<div class="'+getAvatarClass(u.role)+'" style="'+avStyle+'">'+(u.avatarUrl?'':getInitial(u.login))+'</div>'+
           '<div><b>'+esc(u.login)+'</b>'+(isSelf?' <span style="color:var(--accent);font-size:.82em">(вы)</span>':'')+(isRootAdmin?' <span style="color:var(--warn);font-size:.78em">🔒</span>':'')+'</div>'+
         '</div></td>'+
         '<td style="padding:10px"><span class="role-badge '+(u.role==='admin'?'role-admin':'role-user')+'">'+(u.role==='admin'?'Админ':'Польз.')+'</span></td>'+
@@ -1552,6 +1651,185 @@ function submitChangePass(){
   db.collection('users').doc(u._id).update({passHash:hashPass(newP)}).then(function(){
     u.passHash=hashPass(newP);closeChangePassModal();alert('Пароль изменён')
   }).catch(function(e){msg.textContent='Ошибка: '+e.message})
+}
+
+/* === АККАУНТ (личная + общая статистика, аватар) === */
+function setAccountScope(scope){
+  accountScope=scope;
+  var container=document.getElementById('accountAdminToggle');
+  if(container){
+    container.querySelectorAll('button').forEach(function(b){
+      b.classList.toggle('active',b.dataset.scope===scope)
+    })
+  }
+  renderAccount()
+}
+
+function renderAccount(){
+  if(!currentUser)return;
+  var isAdmin=currentUser.role==='admin';
+
+  // Аватар и имя
+  var av=document.getElementById('accountAvatar');
+  av.className=getAvatarClass(currentUser.role)+' avatar-lg';
+  av.textContent=currentUser.avatarUrl?'':getInitial(currentUser.login);
+  av.style.backgroundImage=currentUser.avatarUrl?'url(\''+currentUser.avatarUrl+'\')':'';
+  av.style.backgroundSize='cover';
+  av.style.backgroundPosition='center';
+  av.style.color=currentUser.avatarUrl?'transparent':'';
+
+  document.getElementById('accountName').textContent=currentUser.login;
+  var roleText=currentUser.role==='admin'?'Администратор':'Пользователь';
+  if(currentUser.role==='guest')roleText='Гость';
+  document.getElementById('accountMeta').textContent=roleText;
+
+  // Переключатель у админа
+  var toggle=document.getElementById('accountAdminToggle');
+  if(isAdmin){
+    toggle.classList.remove('hidden');
+    toggle.querySelectorAll('button').forEach(function(b){
+      b.classList.toggle('active',b.dataset.scope===accountScope)
+    })
+  } else {
+    toggle.classList.add('hidden')
+  }
+
+  // Какие результаты показывать
+  var all=getHistory();
+  var results;
+  var title;
+  if(isAdmin&&accountScope==='all'){
+    results=all;
+    title='🌍 Статистика всех пользователей';
+  } else {
+    results=all.filter(function(r){return r.user===currentUser.login});
+    title=isAdmin?'👤 Моя статистика':'📊 Моя статистика';
+  }
+  document.getElementById('accountStatsTitle').textContent=title;
+
+  // Сводка
+  var statBox=document.getElementById('accountStats');
+  if(!results.length){
+    statBox.innerHTML='<div class="empty-state" style="grid-column:1/-1">Пока нет прохождений</div>'
+  } else {
+    var runs=results.length;
+    var totalQ=results.reduce(function(s,r){return s+r.questions},0);
+    var totalCorrect=results.reduce(function(s,r){return s+(r.correctCount||0)},0);
+    var totalAttempts=results.reduce(function(s,r){return s+r.totalAttempts},0);
+    var avgPct=totalQ?Math.round(totalCorrect/totalQ*100):0;
+    var passed=results.filter(function(r){
+      var pc=typeof r.passCount==='number'?r.passCount:0;
+      if(r.checkStatus==='pending')return false;
+      return pc>0?(r.correctCount||0)>=pc:true
+    }).length;
+    statBox.innerHTML=
+      '<div class="summary-box"><div class="val">'+runs+'</div><div class="lbl">прохождений</div></div>'+
+      '<div class="summary-box"><div class="val">'+avgPct+'%</div><div class="lbl">средний результат</div></div>'+
+      '<div class="summary-box"><div class="val">'+passed+'</div><div class="lbl">зачтено</div></div>'+
+      '<div class="summary-box"><div class="val">'+totalCorrect+'/'+totalQ+'</div><div class="lbl">верных ответов</div></div>'+
+      '<div class="summary-box"><div class="val">'+totalAttempts+'</div><div class="lbl">попыток</div></div>'
+  }
+
+  // Список прохождений
+  var attemptsBox=document.getElementById('accountAttempts');
+  if(!results.length){
+    attemptsBox.innerHTML='<div class="empty-state">Нет прохождений</div>';return
+  }
+  var sorted=results.slice().sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0)});
+  attemptsBox.innerHTML=sorted.map(function(r){
+    var who=isAdmin&&accountScope==='all'?makeUserLine(r):'';
+    var passCount=typeof r.passCount==='number'?r.passCount:0;
+    var statusBadge='',scoreText='';
+    if(r.checkStatus==='pending'){
+      statusBadge='<span class="status-badge status-pending">⏳ На проверке</span>';
+      scoreText='<span style="color:var(--warn)">Письменные проверяются</span>'
+    } else {
+      var correct=r.correctCount||0,total=r.questions;
+      var pct=total?Math.round(correct/total*100):0;
+      var pass=passCount>0?correct>=passCount:true;
+      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'%)</span>';
+      statusBadge='<span class="status-badge '+(pass?'status-checked':'status-fail')+'">'+(pass?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+    }
+    return '<div class="attempt-row">'+
+      '<div style="flex:1;min-width:200px">'+
+        '<div style="font-weight:600;margin-bottom:4px">'+esc(r.testName)+'</div>'+
+        '<div style="font-size:.85em;color:var(--muted)">'+esc(r.date)+'</div>'+
+        (who||'')+
+      '</div>'+
+      '<div style="text-align:right">'+scoreText+' '+statusBadge+'</div>'+
+    '</div>'
+  }).join('')
+}
+
+/* === ЗАГРУЗКА АВАТАРА === */
+var avatarPendingData=null;
+
+function openAvatarModal(){
+  avatarPendingData=null;
+  document.getElementById('avatarUrlInput').value='';
+  document.getElementById('avatarFileInput').value='';
+  var cur=currentUser.avatarUrl||'';
+  document.getElementById('avatarPreviewWrap').innerHTML=cur
+    ?'<img src="'+esc(cur)+'" style="max-width:120px;max-height:120px;border-radius:50%;border:2px solid var(--border)">'
+    :'<div style="color:var(--muted)">Аватар не установлен</div>';
+  document.getElementById('avatarModal').classList.remove('hidden')
+}
+function closeAvatarModal(){document.getElementById('avatarModal').classList.add('hidden');avatarPendingData=null}
+
+function loadAvatarFile(e){
+  var f=e.target.files[0];if(!f)return;
+  if(f.size>200*1024){alert('Файл больше 200 КБ. Сожмите картинку или используйте URL.');e.target.value='';return}
+  var r=new FileReader();
+  r.onload=function(ev){
+    avatarPendingData=ev.target.result;
+    document.getElementById('avatarPreviewWrap').innerHTML='<img src="'+avatarPendingData+'" style="max-width:120px;max-height:120px;border-radius:50%;border:2px solid var(--border)">'
+  };
+  r.readAsDataURL(f)
+}
+
+function saveAvatar(){
+  if(!currentUser)return;
+  var url=document.getElementById('avatarUrlInput').value.trim();
+  var newVal='';
+  if(avatarPendingData)newVal=avatarPendingData;
+  else if(url)newVal=url;
+
+  if(!newVal){alert('Выберите файл или вставьте URL');return}
+
+  var u=CACHE.users.find(function(x){return x.login===currentUser.login});
+  if(!u){alert('Пользователь не найден в базе');return}
+
+  db.collection('users').doc(u._id).update({avatarUrl:newVal}).then(function(){
+    u.avatarUrl=newVal;
+    currentUser.avatarUrl=newVal;
+    // Обновляем аватар в шапке
+    var av=document.getElementById('currentAvatar');
+    av.textContent='';
+    av.style.backgroundImage='url(\''+newVal+'\')';
+    av.style.backgroundSize='cover';
+    av.style.backgroundPosition='center';
+    av.style.color='transparent';
+    closeAvatarModal();
+    renderAccount();
+    showMsg('authMsg','ok','Аватар сохранён')
+  }).catch(function(e){alert('Ошибка: '+e.message)})
+}
+
+function resetAvatar(){
+  if(!currentUser)return;
+  if(!confirm('Убрать аватар и вернуть букву?'))return;
+  var u=CACHE.users.find(function(x){return x.login===currentUser.login});
+  if(!u)return;
+  db.collection('users').doc(u._id).update({avatarUrl:''}).then(function(){
+    u.avatarUrl='';
+    currentUser.avatarUrl='';
+    var av=document.getElementById('currentAvatar');
+    av.style.backgroundImage='';
+    av.textContent=getInitial(currentUser.login);
+    av.style.color='';
+    closeAvatarModal();
+    renderAccount();
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
 /* === РЕДАКТОР === */
@@ -1676,13 +1954,14 @@ function setQuestionType(qi,newType){
 }
 function updQ(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].question=v;saveTestField({questions:t.questions})}
 function updOpt(qi,oi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options[oi]=v;saveTestField({questions:t.questions})}
-function updCorrectText(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correctText=v;saveTestField({questions:t.questions})}
+function updCorrectText(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if
 function updExplanation(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].explanation=v;saveTestField({questions:t.questions})}
 function setCorrect(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correct=oi;saveTestField({questions:t.questions})}
 function addOpt(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options.push('');saveTestField({questions:t.questions});renderEditor()}
 function delOpt(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t||t.questions[qi].options.length<=2)return;t.questions[qi].options.splice(oi,1);if(t.questions[qi].correct===oi)t.questions[qi].correct=0;else if(t.questions[qi].correct>oi)t.questions[qi].correct--;saveTestField({questions:t.questions});renderEditor()}
 function delQ(qi){if(!confirm('Удалить вопрос?'))return;var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions.splice(qi,1);saveTestField({questions:t.questions});renderEditor()}
-/* === КАРТИНКИ === */
+
+/* === КАРТИНКИ ВОПРОСОВ === */
 var imgMode=null,imgTargetQ=null,imgPendingData=null;
 
 function openImageModal(qi){
@@ -1705,12 +1984,18 @@ function openExplanationImageModal(qi){
   document.getElementById('imageModalTitle').textContent='Картинка к пояснению';
   document.getElementById('imageModal').classList.remove('hidden')
 }
-function closeImageModal(){document.getElementById('imageModal').classList.add('hidden');imgMode=null;imgTargetQ=null;imgPendingData=null}
+function closeImageModal(){
+  document.getElementById('imageModal').classList.add('hidden');
+  imgMode=null;imgTargetQ=null;imgPendingData=null
+}
 function loadImageFile(e){
   var f=e.target.files[0];if(!f)return;
   if(f.size>800*1024){alert('Файл больше 800 КБ');e.target.value='';return}
   var r=new FileReader();
-  r.onload=function(ev){imgPendingData=ev.target.result;document.getElementById('imgPreviewWrap').innerHTML='<img src="'+imgPendingData+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">'};
+  r.onload=function(ev){
+    imgPendingData=ev.target.result;
+    document.getElementById('imgPreviewWrap').innerHTML='<img src="'+imgPendingData+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">'
+  };
   r.readAsDataURL(f)
 }
 function saveImage(){
@@ -1724,10 +2009,22 @@ function saveImage(){
   else{t.questions[imgTargetQ].explanationImage=newVal}
   saveTestField({questions:t.questions});closeImageModal();renderEditor()
 }
-function clearImage(){document.getElementById('imgUrlInput').value='';document.getElementById('imgFileInput').value='';imgPendingData=null;document.getElementById('imgPreviewWrap').innerHTML=''}
-function removeQImage(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].image='';saveTestField({questions:t.questions});renderEditor()}
-function removeExplanationImage(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].explanationImage='';saveTestField({questions:t.questions});renderEditor()}
+function clearImage(){
+  document.getElementById('imgUrlInput').value='';
+  document.getElementById('imgFileInput').value='';
+  imgPendingData=null;
+  document.getElementById('imgPreviewWrap').innerHTML=''
+}
+function removeQImage(qi){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  t.questions[qi].image='';saveTestField({questions:t.questions});renderEditor()
+}
+function removeExplanationImage(qi){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  t.questions[qi].explanationImage='';saveTestField({questions:t.questions});renderEditor()
+}
 
+/* === СТАРТ === */
 initApp();
 </script>
 </body>
