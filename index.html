@@ -251,7 +251,8 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>/* === FIREBASE === */
+<script>
+/* === FIREBASE === */
 var firebaseConfig={
   apiKey:"AIzaSyCPWPw6-SeO9_4Nwt1ZmwxcGRI5dnucir4",
   authDomain:"avito-tests.firebaseapp.com",
@@ -262,6 +263,8 @@ var firebaseConfig={
 };
 firebase.initializeApp(firebaseConfig);
 var db=firebase.firestore();
+// ФИКС: Firestore не принимает undefined — включаем игнорирование
+db.settings({ignoreUndefinedProperties:true});
 var CACHE={users:[],tests:[],history:[]};
 
 /* === УТИЛИТЫ === */
@@ -495,7 +498,6 @@ function updatePendingBadge(){
 }
 
 function backToTests(){currentTest=null;switchTab('tests')}
-
 /* === СПИСОК ТЕСТОВ === */
 function renderTests(){
   document.getElementById('testsListView').classList.remove('hidden');
@@ -762,36 +764,48 @@ function finishTest(){
   }).join('');
   document.getElementById('finalReview').innerHTML='<h3>📝 Разбор ответов</h3>'+reviewHtml;
 
+  // ФИКС: adminCorrect всегда null (не undefined) — Firestore не принимает undefined
   var details=activeTest.questions.map(function(q,i){
     return {
-      type:q.type||'choice',question:q.question,options:q.options||[],
-      correct:q.correct,correctText:q.correctText||'',
-      explanation:q.explanation||'',explanationImage:q.explanationImage||'',
-      image:q.image||'',attempts:qStats[i].attempts,solved:qStats[i].solved,
+      type:q.type||'choice',
+      question:q.question||'',
+      options:q.options||[],
+      correct:typeof q.correct==='number'?q.correct:0,
+      correctText:q.correctText||'',
+      explanation:q.explanation||'',
+      explanationImage:q.explanationImage||'',
+      image:q.image||'',
+      attempts:qStats[i].attempts,
+      solved:!!qStats[i].solved,
       choices:qStats[i].choices.slice(),
-      adminCorrect:(q.type==='text')?null:undefined
+      adminCorrect:(q.type==='text')?null:null
     }
   });
 
-  // ВАЖНО: сохраняем именно activeTest, а не currentTest
+  // Сохраняем именно activeTest
   var rec={
     testId:activeTest.id,
     testName:activeTest.name,
-    user:currentUser.login,userRole:currentUser.role,
-    fio:currentUser.role==='guest'?currentUser.fio:null,
-    date:new Date().toLocaleString('ru-RU'),timestamp:Date.now(),
-    questions:activeTest.questions.length,totalAttempts:tot,
-    elapsed:el,checkStatus:hasText?'pending':'checked',
-    correctCount:correctCount,details:details
+    user:currentUser.login,
+    userRole:currentUser.role,
+    fio:currentUser.role==='guest'?(currentUser.fio||''):'',
+    date:new Date().toLocaleString('ru-RU'),
+    timestamp:Date.now(),
+    questions:activeTest.questions.length,
+    totalAttempts:tot,
+    elapsed:el,
+    checkStatus:hasText?'pending':'checked',
+    correctCount:correctCount,
+    details:details
   };
 
   var id=genId();
   db.collection('history').doc(id).set(rec).then(function(){
     CACHE.history.unshift(Object.assign({_id:id},rec));
     updatePendingBadge();
-    console.log('✓ Результат сохранён:', activeTest.name, '| checkStatus:', rec.checkStatus, '| testId:', activeTest.id);
+    console.log('✓ Результат сохранён:',activeTest.name,'| checkStatus:',rec.checkStatus,'| testId:',activeTest.id);
   }).catch(function(e){
-    console.error('Ошибка сохранения:', e);
+    console.error('Ошибка сохранения:',e);
     alert('Результат не сохранён: '+e.message)
   })
 }
