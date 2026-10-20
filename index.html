@@ -5,13 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Тесты Авито</title>
 <style>
-:root{
-  --bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;
-  --accent:#38bdf8;--accent-hover:#0ea5e9;--ok:#4ade80;--fail:#f87171;
-  --ok-bg:#14532d;--fail-bg:#7f1d1d;--warn-bg:#78350f;--warn:#fcd34d;
-  --info-bg:#1e3a8a;--info:#93c5fd;--input-bg:#0f172a;--input-border:#475569;
-  --surface:#0f172a;--header:#1e293b
-}
+:root{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#38bdf8;--accent-hover:#0ea5e9;--ok:#4ade80;--fail:#f87171;--ok-bg:#14532d;--fail-bg:#7f1d1d;--warn-bg:#78350f;--warn:#fcd34d;--info-bg:#1e3a8a;--info:#93c5fd;--input-bg:#0f172a;--input-border:#475569;--surface:#0f172a;--header:#1e293b}
 *{box-sizing:border-box}
 body{font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:20px;background:var(--bg);color:var(--text)}
 h1{font-size:1.4em}h2{font-size:1.15em;margin:0 0 14px}h3{font-size:1.02em;margin:20px 0 10px}
@@ -197,7 +191,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
   <div id="tab-pending" class="hidden">
     <div class="card">
       <h2>⏳ Тесты на проверку</h2>
-      <p style="color:var(--muted);font-size:.9em">Здесь только результаты с письменными ответами, ожидающие проверки.</p>
+      <p style="color:var(--muted);font-size:.9em">Только результаты с письменными ответами, ожидающие проверки.</p>
       <div id="pendingList"></div>
     </div>
   </div>
@@ -258,248 +252,6 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-/* === FIREBASE === */
-var firebaseConfig={
-  apiKey:"AIzaSyCPWPw6-SeO9_4Nwt1ZmwxcGRI5dnucir4",
-  authDomain:"avito-tests.firebaseapp.com",
-  projectId:"avito-tests",
-  storageBucket:"avito-tests.firebasestorage.app",
-  messagingSenderId:"1007097355508",
-  appId:"1:1007097355508:web:a98bf4d3d4069fc21392a1"
-};
-firebase.initializeApp(firebaseConfig);
-var db=firebase.firestore();
-var CACHE={users:[],tests:[],history:[]};
-
-/* === УТИЛИТЫ === */
-function hashPass(p){
-  var h=5381;
-  for(var i=0;i<p.length;i++)h=((h<<5)+h+p.charCodeAt(i))|0;
-  return 'h'+Math.abs(h).toString(36)+'_'+p.length
-}
-function esc(s){
-  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
-    return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
-  })
-}
-function showMsg(id,type,txt){
-  var el=document.getElementById(id);if(!el)return;
-  el.style.display='block';
-  el.style.padding='10px 14px';
-  el.style.borderRadius='8px';
-  el.style.marginBottom='16px';
-  el.style.background=type==='ok'?'var(--ok-bg)':'var(--fail-bg)';
-  el.style.color=type==='ok'?'var(--ok)':'var(--fail)';
-  el.textContent=txt;
-  setTimeout(function(){el.style.display='none';el.textContent=''},3500)
-}
-function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
-function letterOf(i){return String.fromCharCode(65+i)}
-function showLoading(){
-  document.getElementById('authScreen').classList.add('hidden');
-  document.getElementById('app').classList.add('hidden');
-  document.body.insertAdjacentHTML('afterbegin','<div id="loadBox" style="padding:60px;text-align:center;font-size:1.2em;color:var(--accent)">⏳ Загрузка...</div>')
-}
-function hideLoading(){
-  var l=document.getElementById('loadBox');
-  if(l)l.remove()
-}
-
-/* === ЗАГРУЗКА === */
-function loadAllData(){
-  return db.collection('users').get().then(function(snap){
-    CACHE.users=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
-    return db.collection('tests').get()
-  }).then(function(snap){
-    CACHE.tests=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
-    return db.collection('history').get()
-  }).then(function(snap){
-    CACHE.history=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())})
-  })
-}
-
-function ensureAdminAndDemos(){
-  var promises=[];
-  if(CACHE.users.length===0){
-    var adminId=genId();
-    var admin={login:'admin',passHash:hashPass('admin'),role:'admin',createdAt:new Date().toISOString()};
-    promises.push(db.collection('users').doc(adminId).set(admin).then(function(){
-      CACHE.users.push(Object.assign({_id:adminId},admin))
-    }))
-  }
-  if(CACHE.tests.length===0){
-    var d1Id=genId();
-    var d1={name:'Демо: общие знания',questions:[
-      {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
-      {type:'text',question:'Сколько будет 7 × 8?',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56.',explanationImage:''}
-    ]};
-    promises.push(db.collection('tests').doc(d1Id).set(d1).then(function(){
-      CACHE.tests.push(Object.assign({_id:d1Id},d1))
-    }))
-  }
-  return Promise.all(promises)
-}
-
-function getUsers(){return CACHE.users.slice()}
-function getTests(){return CACHE.tests.slice()}
-function getHistory(){return CACHE.history.slice()}
-
-/* === СЕССИЯ === */
-var SESSION_KEY='t_session_v2';
-function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY))}catch(e){return null}}
-function setSession(s){s?localStorage.setItem(SESSION_KEY,JSON.stringify(s)):localStorage.removeItem(SESSION_KEY)}
-
-/* === ИНИЦИАЛИЗАЦИЯ === */
-function initApp(){
-  showLoading();
-  loadAllData().then(function(){
-    return ensureAdminAndDemos()
-  }).then(function(){
-    hideLoading();
-    var s=getSession();
-    if(s){
-      if(s.type==='guest'){enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return}
-      var u=CACHE.users.find(function(x){return x.login===s.login});
-      if(u){enterApp(u);return}
-      setSession(null)
-    }
-    showAuthScreen()
-  }).catch(function(e){
-    hideLoading();
-    document.body.innerHTML='<div style="padding:40px;text-align:center;color:#f87171;font-family:system-ui">'+
-      '<h2>Ошибка подключения к Firebase</h2>'+
-      '<p style="background:#7f1d1d;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
-      '<p style="color:#94a3b8;font-size:.9em;margin-top:20px">Проверьте: Firestore создан, правила опубликованы.</p></div>';
-  })
-}
-
-function showAuthScreen(){
-  document.getElementById('authScreen').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-  var hint=document.getElementById('authHint');
-  if(CACHE.users.length===1&&CACHE.users[0].login==='admin'){
-    hint.innerHTML='👋 Войдите как <b>admin / admin</b> или как гость'
-  } else {
-    hint.textContent='Войдите, зарегистрируйтесь или войдите как гость'
-  }
-}
-
-function switchAuthTab(name){
-  document.querySelectorAll('.auth-tab').forEach(function(t){
-    t.classList.toggle('active',t.dataset.authtab===name)
-  });
-  document.getElementById('loginForm').classList.toggle('hidden',name!=='login');
-  document.getElementById('registerForm').classList.toggle('hidden',name!=='register');
-  document.getElementById('guestForm').classList.toggle('hidden',name!=='guest');
-  var m=document.getElementById('authMsg');m.style.display='none';m.textContent=''
-}
-
-function handleLogin(e){
-  e.preventDefault();
-  var login=document.getElementById('loginUser').value.trim();
-  var pass=document.getElementById('loginPass').value;
-  var u=CACHE.users.find(function(x){return x.login.toLowerCase()===login.toLowerCase()});
-  if(!u){showMsg('authMsg','err','Пользователь не найден');return}
-  if(u.passHash!==hashPass(pass)){showMsg('authMsg','err','Неверный пароль');return}
-  setSession({type:'user',login:u.login});
-  document.getElementById('loginPass').value='';
-  enterApp(u)
-}
-
-function handleRegister(e){
-  e.preventDefault();
-  var login=document.getElementById('regUser').value.trim();
-  var pass=document.getElementById('regPass').value;
-  var pass2=document.getElementById('regPass2').value;
-  if(login.length<3){showMsg('authMsg','err','Логин минимум 3 символа');return}
-  if(pass.length<4){showMsg('authMsg','err','Пароль минимум 4 символа');return}
-  if(pass!==pass2){showMsg('authMsg','err','Пароли не совпадают');return}
-  if(CACHE.users.some(function(x){return x.login.toLowerCase()===login.toLowerCase()})){
-    showMsg('authMsg','err','Логин уже занят');return
-  }
-  var id=genId();
-  var nu={login:login,passHash:hashPass(pass),role:'user',createdAt:new Date().toISOString()};
-  db.collection('users').doc(id).set(nu).then(function(){
-    CACHE.users.push(Object.assign({_id:id},nu));
-    setSession({type:'user',login:nu.login});
-    document.getElementById('regUser').value='';
-    document.getElementById('regPass').value='';
-    document.getElementById('regPass2').value='';
-    enterApp(Object.assign({_id:id},nu))
-  }).catch(function(err){showMsg('authMsg','err','Ошибка: '+err.message)})
-}
-
-function handleGuest(e){
-  e.preventDefault();
-  var fio=document.getElementById('guestFio').value.trim();
-  if(fio.length<3){showMsg('authMsg','err','ФИО минимум 3 символа');return}
-  setSession({type:'guest',fio:fio});
-  document.getElementById('guestFio').value='';
-  enterApp({login:fio,role:'guest',fio:fio,isGuest:true})
-}
-
-function logout(){setSession(null);currentUser=null;showAuthScreen()}
-
-var currentUser=null;
-var currentTest=null;
-
-function enterApp(u){
-  currentUser=u;
-  document.getElementById('authScreen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  document.getElementById('currentUser').textContent=u.login;
-  var b=document.getElementById('currentRoleBadge');
-  if(u.role==='admin'){b.className='role-badge role-admin';b.textContent='Админ'}
-  else if(u.role==='guest'){b.className='role-badge role-guest';b.textContent='Гость'}
-  else{b.className='role-badge role-user';b.textContent='Пользователь'}
-
-  document.getElementById('changePassBtn').classList.toggle('hidden',u.role!=='admin');
-
-  document.querySelectorAll('.admin-only').forEach(function(el){
-    el.classList.toggle('hidden',u.role!=='admin')
-  });
-  document.querySelectorAll('.user-only').forEach(function(el){
-    el.classList.toggle('hidden',u.role==='admin')
-  });
-
-  var gb=document.getElementById('guestBanner');
-  if(u.role==='guest'){
-    gb.classList.remove('hidden');
-    gb.innerHTML='👋 Вы вошли как гость: <b>'+esc(u.fio)+'</b>'
-  } else {
-    gb.classList.add('hidden')
-  }
-
-  switchTab('tests')
-}
-
-function switchTab(name){
-  var adminOnly=['pending','results','users','editor'];
-  if(adminOnly.indexOf(name)!==-1&&(!currentUser||currentUser.role!=='admin'))name='tests';
-  if(name==='myresults'&&currentUser&&currentUser.role==='admin')name='tests';
-
-  document.querySelectorAll('.tab[data-tab]').forEach(function(t){
-    t.classList.toggle('active',t.dataset.tab===name)
-  });
-  ['tests','myresults','pending','results','users','editor'].forEach(function(n){
-    var el=document.getElementById('tab-'+n);
-    if(el)el.classList.toggle('hidden',n!==name)
-  });
-  if(name==='tests')renderTests();
-  if(name==='myresults')renderMyResults();
-  if(name==='pending')renderPending();
-  if(name==='results')renderResults();
-  if(name==='users')renderUsers();
-  if(name==='editor')renderEditor()
-}
-
-function updatePendingBadge(){
-  var cnt=CACHE.history.filter(function(r){return r.checkStatus==='pending'}).length;
-  var el=document.getElementById('pendingCount');
-  if(el)el.textContent=cnt>0?'('+cnt+')':''
-}
-
-function backToTests(){currentTest=null;switchTab('tests')}
 /* === СПИСОК ТЕСТОВ === */
 function renderTests(){
   document.getElementById('testsListView').classList.remove('hidden');
@@ -541,9 +293,16 @@ var cur=0,chk=false,qStats=[],currentSel=[],started=0;
 
 function startTest(){
   if(!currentTest)return;
+  // ФИКСИРУЕМ тест на момент старта — дальше currentTest может измениться,
+  // но activeTest останется тем же
+  activeTest={
+    id: currentTest._id,
+    name: currentTest.name,
+    questions: JSON.parse(JSON.stringify(currentTest.questions))
+  };
   cur=0;
-  qStats=currentTest.questions.map(function(){return{attempts:0,solved:false,choices:[],firstChoice:null}});
-  currentSel=currentTest.questions.map(function(){return null});
+  qStats=activeTest.questions.map(function(){return{attempts:0,solved:false,choices:[],firstChoice:null}});
+  currentSel=activeTest.questions.map(function(){return null});
   started=Date.now();
   document.getElementById('startView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
@@ -553,11 +312,11 @@ function startTest(){
 
 function renderQ(){
   chk=false;
-  var q=currentTest.questions[cur];
+  var q=activeTest.questions[cur];
   var sel=currentSel[cur];
   var qtype=q.type||'choice';
 
-  document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts;
+  document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+activeTest.questions.length+' • Попыток: '+qStats[cur].attempts;
 
   var badge=qtype==='text'
     ?' <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;text-transform:uppercase;background:var(--warn-bg);color:var(--warn);margin-left:8px">✍️</span>'
@@ -614,7 +373,7 @@ function renderQ(){
   if(solvedQ){
     cb.classList.add('hidden');
     nb.classList.remove('hidden');
-    nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
+    nb.textContent=(cur===activeTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   } else {
     cb.classList.remove('hidden');
     cb.disabled=false;
@@ -631,7 +390,7 @@ function pickOption(i){
 }
 
 function checkAnswer(){
-  var q=currentTest.questions[cur];
+  var q=activeTest.questions[cur];
   var qtype=q.type||'choice';
 
   if(qtype==='choice'){
@@ -657,7 +416,7 @@ function checkAnswer(){
       document.getElementById('checkBtn').classList.add('hidden');
       var nb=document.getElementById('nextBtn');
       nb.classList.remove('hidden');
-      nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
+      nb.textContent=(cur===activeTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
     } else {
       document.querySelectorAll('.option').forEach(function(el,i){
         el.classList.remove('selected','correct');
@@ -698,32 +457,33 @@ function checkAnswer(){
     document.getElementById('checkBtn').classList.add('hidden');
     var nb2=document.getElementById('nextBtn');
     nb2.classList.remove('hidden');
-    nb2.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
+    nb2.textContent=(cur===activeTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   }
-  document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts
+  document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+activeTest.questions.length+' • Попыток: '+qStats[cur].attempts
 }
 
-function nextQuestion(){if(cur<currentTest.questions.length-1){cur++;renderQ()}else finishTest()}
+function nextQuestion(){if(cur<activeTest.questions.length-1){cur++;renderQ()}else finishTest()}
 function prevQuestion(){if(cur>0){cur--;renderQ()}}
 
 function finishTest(){
+  if(!activeTest){alert('Ошибка: тест не зафиксирован');return}
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.remove('hidden');
   var tot=qStats.reduce(function(s,q){return s+q.attempts},0);
   var el=Math.round((Date.now()-started)/1000);
-  var hasText=currentTest.questions.some(function(q){return q.type==='text'});
+  var hasText=activeTest.questions.some(function(q){return q.type==='text'});
   var correctCount=0;
-  currentTest.questions.forEach(function(q,i){
+  activeTest.questions.forEach(function(q,i){
     if(q.type==='choice'&&qStats[i].solved)correctCount++;
   });
 
   document.getElementById('finalStats').innerHTML=
-    '<div class="stat"><b>'+currentTest.questions.length+'</b>вопросов</div>'+
+    '<div class="stat"><b>'+activeTest.questions.length+'</b>вопросов</div>'+
     '<div class="stat"><b>'+correctCount+'</b>верно (выбор)</div>'+
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
-  var reviewHtml=currentTest.questions.map(function(q,i){
+  var reviewHtml=activeTest.questions.map(function(q,i){
     var st=qStats[i];
     var qtype=q.type||'choice';
     var contentHtml='';
@@ -758,7 +518,7 @@ function finishTest(){
   }).join('');
   document.getElementById('finalReview').innerHTML='<h3>📝 Разбор ответов</h3>'+reviewHtml;
 
-  var details=currentTest.questions.map(function(q,i){
+  var details=activeTest.questions.map(function(q,i){
     return {
       type:q.type||'choice',question:q.question,options:q.options||[],
       correct:q.correct,correctText:q.correctText||'',
@@ -769,12 +529,14 @@ function finishTest(){
     }
   });
 
+  // ВАЖНО: сохраняем именно activeTest, а не currentTest
   var rec={
-    testId:currentTest._id,testName:currentTest.name,
+    testId:activeTest.id,
+    testName:activeTest.name,
     user:currentUser.login,userRole:currentUser.role,
     fio:currentUser.role==='guest'?currentUser.fio:null,
     date:new Date().toLocaleString('ru-RU'),timestamp:Date.now(),
-    questions:currentTest.questions.length,totalAttempts:tot,
+    questions:activeTest.questions.length,totalAttempts:tot,
     elapsed:el,checkStatus:hasText?'pending':'checked',
     correctCount:correctCount,details:details
   };
@@ -782,8 +544,12 @@ function finishTest(){
   var id=genId();
   db.collection('history').doc(id).set(rec).then(function(){
     CACHE.history.unshift(Object.assign({_id:id},rec));
-    updatePendingBadge()
-  }).catch(function(e){alert('Результат не сохранён: '+e.message)})
+    updatePendingBadge();
+    console.log('✓ Результат сохранён:', activeTest.name, '| checkStatus:', rec.checkStatus, '| testId:', activeTest.id);
+  }).catch(function(e){
+    console.error('Ошибка сохранения:', e);
+    alert('Результат не сохранён: '+e.message)
+  })
 }
 /* === МОИ РЕЗУЛЬТАТЫ (для не-админа) === */
 function renderMyResults(){
@@ -952,7 +718,6 @@ function deleteOneResult(id){
   db.collection('history').doc(id).delete().then(function(){
     CACHE.history=CACHE.history.filter(function(x){return x._id!==id});
     updatePendingBadge();
-    // Обновляем текущую вкладку
     var activeTab=document.querySelector('.tab.active');
     if(activeTab){
       var name=activeTab.dataset.tab;
