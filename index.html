@@ -95,6 +95,18 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .check-btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .stat-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:4px 0}
 .stat-bar-fill{height:100%;background:linear-gradient(90deg,var(--fail),var(--warn),var(--ok))}
+/* Светлый аватар и имя пользователя */
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#0f172a;font-weight:700;font-size:1em;flex-shrink:0;vertical-align:middle;border:2px solid rgba(255,255,255,.15)}
+.avatar-admin{background:#fcd34d;color:#78350f;border-color:#fbbf24}
+.avatar-guest{background:#4ade80;color:#14532d;border-color:#22c55e}
+.avatar-user{background:#93c5fd;color:#1e3a8a;border-color:#60a5fa}
+.user-line{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:var(--card);border-radius:8px;border:1px solid var(--border)}
+.user-line .user-info{display:flex;flex-direction:column;gap:2px}
+.user-line .name{font-weight:700;color:var(--text);font-size:1.05em;line-height:1.2}
+.user-line .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.03em;width:fit-content}
+.tag-guest{background:var(--ok-bg);color:var(--ok)}
+.tag-user{background:var(--info-bg);color:var(--info)}
+.tag-admin{background:var(--warn-bg);color:var(--warn)}
 </style>
 </head>
 <body>
@@ -130,7 +142,13 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 
 <div id="app" class="hidden">
   <div class="userbar">
-    <div>Вы вошли как <b id="currentUser"></b><span id="currentRoleBadge" class="role-badge"></span></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div id="currentAvatar" class="avatar">?</div>
+      <div>
+        <div style="font-size:.78em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600">Вы вошли как</div>
+        <div><b id="currentUser" style="font-size:1.15em"></b><span id="currentRoleBadge" class="role-badge"></span></div>
+      </div>
+    </div>
     <div style="display:flex;gap:8px">
       <button id="changePassBtn" class="small secondary hidden" onclick="openChangePassModal()">🔑</button>
       <button class="small secondary" onclick="logout()">Выйти</button>
@@ -190,7 +208,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
   <div id="tab-myresults" class="hidden">
     <div class="card">
       <h2>📊 Мои результаты</h2>
-      <p style="color:var(--muted);font-size:.9em">Здесь только ваши результаты. Письменные появляются после проверки.</p>
+      <p style="color:var(--muted);font-size:.9em">Здесь только ваши результаты.</p>
       <div id="myResultsList"></div>
     </div>
   </div>
@@ -228,8 +246,8 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
       </div>
       <div class="form-row"><label>Название теста</label><input type="text" id="editorTestName" name="app_test_title" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="updateTestName(this.value)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-        <div class="form-row" style="margin:0"><label>⏱️ Время (мин, 0 = без лимита)</label><input type="number" id="editorTimeLimit" min="0" max="180" oninput="updateTestTimeLimit(this.value)" name="app_time"></div>
-        <div class="form-row" style="margin:0"><label>🎯 Порог прохождения (%)</label><input type="number" id="editorPassScore" min="0" max="100" oninput="updateTestPassScore(this.value)" name="app_pass"></div>
+        <div class="form-row" style="margin:0"><label>⏱️ Время (мин, 0 = нет)</label><input type="number" id="editorTimeLimit" min="0" max="180" oninput="updateTestTimeLimit(this.value)" name="app_time"></div>
+        <div class="form-row" style="margin:0"><label>🎯 Порог (верных, 0 = нет)</label><input type="number" id="editorPassScore" min="0" oninput="updateTestPassScore(this.value)" name="app_pass" placeholder="например 7"></div>
         <div class="form-row" style="margin:0"><label>🔀 Перемешивать</label><select id="editorShuffle" onchange="updateTestShuffle(this.value)" name="app_shuffle"><option value="none">Нет</option><option value="questions">Вопросы</option><option value="both">Вопросы + варианты</option></select></div>
       </div>
       <div id="editorMsg"></div>
@@ -336,7 +354,7 @@ function hideLoading(){
   if(l)l.remove()
 }
 
-/* === ПЕРЕМЕШИВАНИЕ (Фишер-Йетс) === */
+/* === ПЕРЕМЕШИВАНИЕ === */
 function shuffleArray(arr){
   var a=arr.slice();
   for(var i=a.length-1;i>0;i--){
@@ -344,6 +362,34 @@ function shuffleArray(arr){
     var tmp=a[i];a[i]=a[j];a[j]=tmp;
   }
   return a
+}
+
+/* === АВАТАР И СТРОКА ПОЛЬЗОВАТЕЛЯ === */
+function getInitial(name){
+  var n=String(name||'?').trim();
+  return n?n.charAt(0).toUpperCase():'?'
+}
+function getAvatarClass(role){
+  if(role==='admin')return 'avatar avatar-admin';
+  if(role==='guest')return 'avatar avatar-guest';
+  return 'avatar avatar-user'
+}
+/* Красивая строка пользователя для карточек результатов */
+function makeUserLine(r){
+  var name=r.userRole==='guest'?(r.fio||r.user):r.user;
+  var initial=getInitial(name);
+  var avClass=getAvatarClass(r.userRole);
+  var tag='';
+  if(r.userRole==='guest')tag='<span class="tag tag-guest">Гость</span>';
+  else if(r.userRole==='admin')tag='<span class="tag tag-admin">Админ</span>';
+  else tag='<span class="tag tag-user">Аккаунт</span>';
+  return '<div class="user-line">'+
+    '<div class="'+avClass+'">'+initial+'</div>'+
+    '<div class="user-info">'+
+      '<span class="name">'+esc(name)+'</span>'+
+      tag+
+    '</div>'+
+  '</div>'
 }
 
 /* === ЗАГРУЗКА === */
@@ -370,7 +416,7 @@ function ensureAdminAndDemos(){
   }
   if(CACHE.tests.length===0){
     var d1Id=genId();
-    var d1={name:'Демо: общие знания',timeLimit:0,passScore:60,shuffle:'none',questions:[
+    var d1={name:'Демо: общие знания',timeLimit:0,passCount:0,shuffle:'none',questions:[
       {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
       {type:'text',question:'Сколько будет 7 × 8?',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56.',explanationImage:''}
     ]};
@@ -385,7 +431,6 @@ function getUsers(){return CACHE.users.slice()}
 function getTests(){return CACHE.tests.slice()}
 function getHistory(){return CACHE.history.slice()}
 
-/* === БЕЗОПАСНЫЙ ПОИСК === */
 function findUserByLogin(login){
   if(!login||typeof login!=='string')return null;
   var lower=login.toLowerCase();
@@ -532,6 +577,10 @@ function enterApp(u){
   currentUser=u;
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
+  // Светлый аватар с первой буквой имени
+  var av=document.getElementById('currentAvatar');
+  av.textContent=getInitial(u.login);
+  av.className=getAvatarClass(u.role);
   document.getElementById('currentUser').textContent=u.login;
   var b=document.getElementById('currentRoleBadge');
   if(u.role==='admin'){b.className='role-badge role-admin';b.textContent='Админ'}
@@ -603,6 +652,7 @@ function renderTests(){
     if(hasText)meta+=' • ✍️ с проверкой';
     if(t.timeLimit&&t.timeLimit>0)meta+=' • ⏱️ '+t.timeLimit+' мин';
     if(t.shuffle&&t.shuffle!=='none')meta+=' • 🔀';
+    if(typeof t.passCount==='number'&&t.passCount>0)meta+=' • 🎯 '+t.passCount+' верных';
     return '<div class="test-card">'+
       '<div class="tc-info"><div class="tc-title">'+esc(t.name)+'</div>'+
       '<div class="tc-meta">'+meta+'</div></div>'+
@@ -626,25 +676,21 @@ function openTestStart(id){
   var info='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены.';
   if(t.timeLimit&&t.timeLimit>0)info+=' ⏱️ Время: '+t.timeLimit+' мин.';
   if(t.shuffle&&t.shuffle!=='none')info+=' 🔀 Перемешивание: '+(t.shuffle==='both'?'вопросы и варианты':'вопросы')+'.';
+  if(typeof t.passCount==='number'&&t.passCount>0)info+=' 🎯 Для зачёта нужно верных: '+t.passCount+'.';
   document.getElementById('startInfo').textContent=info;
 
-  // Проверка наличия черновика
   var draft=getDraft(t._id);
+  var oldNotice=document.querySelector('.draft-notice');
+  if(oldNotice)oldNotice.remove();
   if(draft){
-    var btn=document.getElementById('startBtn');
-    btn.textContent='▶ Продолжить с черновика';
+    document.getElementById('startBtn').textContent='▶ Продолжить с черновика';
     var notice=document.createElement('p');
     notice.style.cssText='color:var(--warn);font-size:.9em;margin-top:10px';
-    notice.innerHTML='💾 Найден сохранённый черновик от '+draft.savedAt+'. Нажмите «Начать» — продолжите с того же вопроса.';
-    var sv=document.getElementById('startView');
-    var old=sv.querySelector('.draft-notice');
-    if(old)old.remove();
     notice.className='draft-notice';
-    sv.appendChild(notice);
+    notice.innerHTML='💾 Найден сохранённый черновик от '+draft.savedAt+'. Нажмите «Начать» — продолжите с того же места.';
+    document.getElementById('startView').appendChild(notice);
   } else {
     document.getElementById('startBtn').textContent='▶ Начать';
-    var old2=document.querySelector('.draft-notice');
-    if(old2)old2.remove();
   }
 }
 
@@ -669,6 +715,8 @@ function saveDraft(){
       currentSel:currentSel,
       started:started,
       deadline:deadline,
+      timeLimit:activeTest.timeLimit,
+      passCount:activeTest.passCount,
       savedAt:new Date().toLocaleString('ru-RU')
     };
     localStorage.setItem(getDraftKey(activeTest.id),JSON.stringify(draft));
@@ -687,8 +735,13 @@ function startTest(){
   var draft=getDraft(currentTest._id);
 
   if(draft){
-    // Продолжаем с черновика
-    activeTest={id:draft.testId,name:draft.testName,questions:draft.questions};
+    activeTest={
+      id:draft.testId,
+      name:draft.testName,
+      questions:draft.questions,
+      timeLimit:draft.timeLimit||0,
+      passCount:typeof draft.passCount==='number'?draft.passCount:0
+    };
     cur=draft.cur||0;
     qStats=draft.qStats||activeTest.questions.map(function(){return{attempts:0,solved:false,choices:[],firstChoice:null}});
     currentSel=draft.currentSel||activeTest.questions.map(function(){return null});
@@ -699,15 +752,12 @@ function startTest(){
       startTest();return
     }
   } else {
-    // Новый старт — применяем перемешивание
     var questions=JSON.parse(JSON.stringify(currentTest.questions));
 
-    // Перемешивание вопросов
     if(currentTest.shuffle==='questions'||currentTest.shuffle==='both'){
       questions=shuffleArray(questions)
     }
 
-    // Перемешивание вариантов
     if(currentTest.shuffle==='both'){
       questions=questions.map(function(q){
         if(q.type!=='text'&&q.options&&q.options.length>1){
@@ -727,7 +777,7 @@ function startTest(){
       id:currentTest._id,
       name:currentTest.name,
       timeLimit:currentTest.timeLimit||0,
-      passScore:typeof currentTest.passScore==='number'?currentTest.passScore:60,
+      passCount:typeof currentTest.passCount==='number'?currentTest.passCount:0,
       questions:questions
     };
     cur=0;
@@ -741,7 +791,6 @@ function startTest(){
   document.getElementById('finishView').classList.add('hidden');
   document.getElementById('testView').classList.remove('hidden');
 
-  // Запускаем таймер
   startTimer();
   renderQ()
 }
@@ -964,14 +1013,14 @@ function finishTest(timeUp){
     if(q.type==='choice'&&qStats[i].solved)correctCount++;
   });
 
-  var passScore=activeTest.passScore||60;
+  var passCount=typeof activeTest.passCount==='number'?activeTest.passCount:0;
   var pct=activeTest.questions.length?Math.round(correctCount/activeTest.questions.length*100):0;
-  var passed=pct>=passScore;
 
   document.getElementById('finalStats').innerHTML=
     '<div class="stat"><b>'+activeTest.questions.length+'</b>вопросов</div>'+
-    '<div class="stat"><b>'+correctCount+'</b>верно (выбор)</div>'+
+    '<div class="stat"><b>'+correctCount+'</b>верно</div>'+
     '<div class="stat"><b>'+pct+'%</b>результат</div>'+
+    (passCount>0?'<div class="stat"><b>'+passCount+'</b>порог</div>':'')+
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
@@ -1038,7 +1087,7 @@ function finishTest(timeUp){
     elapsed:el,
     checkStatus:hasText?'pending':'checked',
     correctCount:correctCount,
-    passScore:passScore,
+    passCount:passCount,
     details:details
   };
 
@@ -1046,7 +1095,7 @@ function finishTest(timeUp){
   db.collection('history').doc(id).set(cleanForFirestore(rec)).then(function(){
     clearDraft(activeTest.id);
     updatePendingBadge();
-    console.log('✓ Результат сохранён:',activeTest.name,'| %',pct,'| pass',passScore);
+    console.log('✓ Результат сохранён:',activeTest.name,'| верных',correctCount,'| порог',passCount);
   }).catch(function(e){
     console.error('Ошибка сохранения:',e);
     alert('Результат не сохранён: '+e.message)
@@ -1056,7 +1105,6 @@ function finishTest(timeUp){
 function renderMyResults(){
   if(currentUser.role==='admin'){switchTab('tests');return}
   var list=document.getElementById('myResultsList');
-  // СТРОГО фильтруем по текущему пользователю
   var my=getHistory().filter(function(r){return r.user===currentUser.login});
   my.sort(function(a,b){
     if(a.checkStatus==='pending'&&b.checkStatus!=='pending')return -1;
@@ -1066,20 +1114,22 @@ function renderMyResults(){
   if(!my.length){list.innerHTML='<div class="empty-state">📭 Вы ещё не проходили тесты</div>';return}
   list.innerHTML=my.map(function(r){
     var statusBadge='',scoreText='';
-    var passScore=r.passScore||60;
+    var passCount=typeof r.passCount==='number'?r.passCount:0;
     if(r.checkStatus==='pending'){
       statusBadge='<span class="status-badge status-pending">⏳ На проверке</span>';
       scoreText='<span style="color:var(--warn)">Письменные ответы проверяются</span>'
     } else {
       var total=r.questions,correct=r.correctCount||0;
       var pct=total?Math.round(correct/total*100):0;
-      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted);font-size:.9em">правильных ('+pct+'%)</span>';
-      statusBadge='<span class="status-badge '+(pct>=passScore?'status-checked':'status-fail')+'">'+(pct>=passScore?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+      var passed=passCount>0?correct>=passCount:true;
+      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted);font-size:.9em">('+pct+'%'+(passCount>0?', порог '+passCount:'')+')</span>';
+      statusBadge='<span class="status-badge '+(passed?'status-checked':'status-fail')+'">'+(passed?'✓ Зачтено':'✗ Не зачтено')+'</span>'
     }
     return '<div class="test-card">'+
       '<div class="tc-info">'+
         '<div class="tc-title">'+esc(r.testName)+'</div>'+
         '<div class="tc-meta">'+esc(r.date)+'</div>'+
+        makeUserLine(r)+
         '<div style="margin-top:6px">'+scoreText+' '+statusBadge+'</div>'+
       '</div>'+
       '<div class="tc-actions"><button class="small secondary" onclick="viewMyResult(\''+r._id+'\')">Детали</button></div>'+
@@ -1090,23 +1140,24 @@ function renderMyResults(){
 function viewMyResult(id){
   var r=CACHE.history.find(function(x){return x._id===id});
   if(!r)return;
-  // Защита: пользователь может смотреть только свои
   if(currentUser.role!=='admin'&&r.user!==currentUser.login){
     alert('Это не ваш результат');return
   }
   var pct=r.questions?Math.round((r.correctCount||0)/r.questions*100):0;
-  var passScore=r.passScore||60;
+  var passCount=typeof r.passCount==='number'?r.passCount:0;
+  var passed=passCount>0?(r.correctCount||0)>=passCount:true;
   var statusLine='';
   if(r.checkStatus==='pending'){
     statusLine='<span class="status-badge status-pending">⏳ Письменные на проверке</span>'
   } else {
-    statusLine='<span class="result-score">'+(r.correctCount||0)+'/'+r.questions+'</span> <span style="color:var(--muted)">правильных ('+pct+'%)</span> <span class="status-badge '+(pct>=passScore?'status-checked':'status-fail')+'">'+(pct>=passScore?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+    statusLine='<span class="result-score">'+(r.correctCount||0)+'/'+r.questions+'</span> <span style="color:var(--muted)">('+pct+'%'+(passCount>0?', порог '+passCount+' верных':'')+')</span> <span class="status-badge '+(passed?'status-checked':'status-fail')+'">'+(passed?'✓ Зачтено':'✗ Не зачтено')+'</span>'
   }
   var html='<div style="padding:20px;max-width:800px;margin:0 auto">'+
     '<button class="small secondary" onclick="closeResultView()" style="margin-bottom:16px">← Назад</button>'+
     '<h2>'+esc(r.testName)+'</h2>'+
     '<p style="color:var(--muted)">'+esc(r.date)+' • '+r.questions+' вопросов</p>'+
-    '<div style="margin-bottom:16px">'+statusLine+'</div>'+
+    makeUserLine(r)+
+    '<div style="margin:12px 0 16px">'+statusLine+'</div>'+
     buildResultDetailHTML(r,false)+
     '</div>';
   document.body.insertAdjacentHTML('beforeend','<div id="resultOverlay" style="position:fixed;inset:0;background:var(--bg);z-index:950;overflow:auto">'+html+'</div>')
@@ -1128,13 +1179,12 @@ function renderPending(){
     return
   }
   list.innerHTML=pending.map(function(r){
-    var who=r.userRole==='guest'?'👤 '+esc(r.fio)+' (гость)':'👤 '+esc(r.user);
     return '<div class="history-item" data-id="'+r._id+'">'+
       '<div class="history-head">'+
-        '<div>'+
+        '<div style="flex:1">'+
           '<div class="h-title">'+esc(r.date)+' — <span style="color:var(--accent)">'+esc(r.testName)+'</span></div>'+
-          '<div class="h-meta">'+who+' • '+r.questions+' вопр. • '+r.totalAttempts+' попыток</div>'+
-          '<div style="margin-top:6px"><span class="status-badge status-pending">⏳ Ожидает проверки</span></div>'+
+          makeUserLine(r)+
+          '<div class="h-meta" style="margin-top:6px">'+r.questions+' вопр. • '+r.totalAttempts+' попыток • <span class="status-badge status-pending">⏳ Ожидает проверки</span></div>'+
         '</div>'+
         '<div class="h-actions">'+
           '<span class="chev" onclick="togglePendingResult(\''+r._id+'\')">▸</span>'+
@@ -1184,24 +1234,24 @@ function renderResults(){
   });
 
   list.innerHTML=filtered.map(function(r){
-    var who=r.userRole==='guest'?'👤 '+esc(r.fio)+' (гость)':'👤 '+esc(r.user);
     var statusBadge='',scoreText='';
-    var passScore=r.passScore||60;
+    var passCount=typeof r.passCount==='number'?r.passCount:0;
     if(r.checkStatus==='pending'){
       statusBadge='<span class="status-badge status-pending">⏳ На проверке</span>';
       scoreText='<span style="color:var(--warn)">Ожидает проверки</span>'
     } else {
       var total=r.questions,correct=r.correctCount||0;
       var pct=total?Math.round(correct/total*100):0;
-      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'%, порог '+passScore+'%)</span>';
-      statusBadge='<span class="status-badge '+(pct>=passScore?'status-checked':'status-fail')+'">'+(pct>=passScore?'✓ Зачтено':'✗ Не зачтено')+'</span>'
+      var passed=passCount>0?correct>=passCount:true;
+      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'%'+(passCount>0?', порог '+passCount+' верных':'')+')</span>';
+      statusBadge='<span class="status-badge '+(passed?'status-checked':'status-fail')+'">'+(passed?'✓ Зачтено':'✗ Не зачтено')+'</span>'
     }
     return '<div class="history-item" data-id="'+r._id+'">'+
       '<div class="history-head">'+
-        '<div>'+
+        '<div style="flex:1">'+
           '<div class="h-title">'+esc(r.date)+' — <span style="color:var(--accent)">'+esc(r.testName)+'</span></div>'+
-          '<div class="h-meta">'+who+' • '+r.questions+' вопр. • '+r.totalAttempts+' попыток</div>'+
-          '<div style="margin-top:6px">'+scoreText+' '+statusBadge+'</div>'+
+          makeUserLine(r)+
+          '<div class="h-meta" style="margin-top:6px">'+r.questions+' вопр. • '+r.totalAttempts+' попыток • '+scoreText+' '+statusBadge+'</div>'+
         '</div>'+
         '<div class="h-actions">'+
           '<span class="chev" onclick="toggleAdminResult(\''+r._id+'\')">▸</span>'+
@@ -1240,8 +1290,10 @@ function buildResultDetailHTML(r,isAdmin){
     else{tTotal++;if(d.adminCorrect===true)tOk++;else if(d.adminCorrect===false){}else tPend++}
   });
   var totalCorrect=ch+tOk;
+  var passCount=typeof r.passCount==='number'?r.passCount:0;
   var summaryHtml='<div class="summary-grid">'+
     '<div class="summary-box"><div class="val">'+totalCorrect+'/'+details.length+'</div><div class="lbl">итого верных</div></div>'+
+    (passCount>0?'<div class="summary-box"><div class="val">'+passCount+'</div><div class="lbl">🎯 порог</div></div>':'')+
     '<div class="summary-box"><div class="val">'+ch+'</div><div class="lbl">📋 верно</div></div>'+
     (tTotal>0?'<div class="summary-box"><div class="val">'+tOk+'/'+tTotal+'</div><div class="lbl">✍️ проверено</div></div>':'')+
     (tPend>0?'<div class="summary-box" style="background:var(--warn-bg)"><div class="val" style="color:var(--warn)">'+tPend+'</div><div class="lbl" style="color:var(--warn)">⏳ ждут</div></div>':'')+
@@ -1328,7 +1380,6 @@ function renderStats(){
   var test=CACHE.tests.find(function(t){return t._id===cur});
   if(!test){content.innerHTML='<div class="empty-state">Тест не найден</div>';return}
 
-  // Собираем все результаты по этому тесту
   var results=CACHE.history.filter(function(r){
     return r.testId===cur && r.details && r.details.length
   });
@@ -1337,7 +1388,6 @@ function renderStats(){
     content.innerHTML='<div class="empty-state">📊 По этому тесту пока нет результатов</div>';return
   }
 
-  // Общая сводка
   var totalRuns=results.length;
   var checkedRuns=results.filter(function(r){return r.checkStatus==='checked'}).length;
   var pendingRuns=results.filter(function(r){return r.checkStatus==='pending'}).length;
@@ -1356,11 +1406,10 @@ function renderStats(){
     '<div class="summary-box"><div class="val">'+avgPct+'%</div><div class="lbl">средний результат</div></div>'+
   '</div>';
 
-  // Статистика по каждому вопросу
   var qStatsArr=(test.questions||[]).map(function(q,qi){
-    var asked=0;       // сколько раз вопрос был задан (по всем результатам, где есть этот вопрос)
-    var correct=0;     // сколько раз ответили верно
-    var attemptsSum=0; // сумма попыток на вопрос
+    var asked=0;
+    var correct=0;
+    var attemptsSum=0;
 
     results.forEach(function(r){
       var d=r.details[qi];
@@ -1406,7 +1455,7 @@ function renderStats(){
 
   content.innerHTML=headerHtml+
     '<h3>Статистика по вопросам</h3>'+
-    '<p style="color:var(--muted);font-size:.88em;margin-bottom:14px">Вопросы, где мало верных ответов (красные/жёлтые) — самые сложные. Возможно, стоит переформулировать или добавить пояснение.</p>'+
+    '<p style="color:var(--muted);font-size:.88em;margin-bottom:14px">Красные/жёлтые вопросы — самые сложные. Возможно, стоит переформулировать или добавить пояснение.</p>'+
     questionsHtml
 }
 
@@ -1427,7 +1476,10 @@ function renderUsers(){
       var isRootAdmin=u.login==='admin';
       var canDel=!isSelf&&!isRootAdmin;
       return '<tr style="border-bottom:1px solid var(--border)">'+
-        '<td style="padding:10px"><b>'+esc(u.login)+'</b>'+(isSelf?' <span style="color:var(--accent);font-size:.82em">(вы)</span>':'')+(isRootAdmin?' <span style="color:var(--warn);font-size:.78em">🔒</span>':'')+'</td>'+
+        '<td style="padding:10px"><div style="display:flex;align-items:center;gap:10px">'+
+          '<div class="'+getAvatarClass(u.role)+'">'+getInitial(u.login)+'</div>'+
+          '<div><b>'+esc(u.login)+'</b>'+(isSelf?' <span style="color:var(--accent);font-size:.82em">(вы)</span>':'')+(isRootAdmin?' <span style="color:var(--warn);font-size:.78em">🔒</span>':'')+'</div>'+
+        '</div></td>'+
         '<td style="padding:10px"><span class="role-badge '+(u.role==='admin'?'role-admin':'role-user')+'">'+(u.role==='admin'?'Админ':'Польз.')+'</span></td>'+
         '<td style="padding:10px">'+runs+'</td>'+
         '<td style="padding:10px;text-align:right">'+
@@ -1502,14 +1554,14 @@ function submitChangePass(){
   }).catch(function(e){msg.textContent='Ошибка: '+e.message})
 }
 
-/* === РЕДАКТОР — ЗАГОЛОВОК И НАСТРОЙКИ === */
+/* === РЕДАКТОР === */
 var editTestId=null;
 
 function createTest(){
   var name=prompt('Название теста:','Новый тест');
   if(!name||!name.trim())return;
   var id=genId();
-  var nt={name:name.trim(),questions:[],timeLimit:0,passScore:60,shuffle:'none'};
+  var nt={name:name.trim(),questions:[],timeLimit:0,passCount:0,shuffle:'none'};
   db.collection('tests').doc(id).set(nt).then(function(){
     CACHE.tests.push(Object.assign({_id:id},nt));
     editTestId=id;switchTab('editor')
@@ -1530,7 +1582,6 @@ function deleteTest(id){
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
-/* === РЕДАКТОР — ОСНОВНАЯ ЧАСТЬ === */
 function renderEditor(){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t){switchTab('tests');return}
@@ -1538,7 +1589,7 @@ function renderEditor(){
   document.getElementById('editorInfo').textContent='Вопросов: '+(t.questions||[]).length;
   document.getElementById('editorTestName').value=t.name;
   document.getElementById('editorTimeLimit').value=t.timeLimit||0;
-  document.getElementById('editorPassScore').value=t.passScore||60;
+  document.getElementById('editorPassScore').value=typeof t.passCount==='number'?t.passCount:0;
   document.getElementById('editorShuffle').value=t.shuffle||'none';
 
   var list=document.getElementById('editorList');
@@ -1604,8 +1655,8 @@ function updateTestTimeLimit(v){
   saveTestField({timeLimit:n})
 }
 function updateTestPassScore(v){
-  var n=parseInt(v,10);if(isNaN(n)||n<0)n=0;if(n>100)n=100;
-  saveTestField({passScore:n})
+  var n=parseInt(v,10);if(isNaN(n)||n<0)n=0;
+  saveTestField({passCount:n})
 }
 function updateTestShuffle(v){
   saveTestField({shuffle:v})
