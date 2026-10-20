@@ -103,19 +103,19 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
       <button class="auth-tab" data-authtab="guest" onclick="switchAuthTab('guest')">Гость</button>
     </div>
     <div id="authMsg"></div>
-    <form id="loginForm" onsubmit="handleLogin(event)">
-      <div class="form-row"><label>Логин</label><input type="text" id="loginUser" required></div>
-      <div class="form-row"><label>Пароль</label><input type="password" id="loginPass" required></div>
+    <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
+      <div class="form-row"><label>Логин</label><input type="text" id="loginUser" name="app_login_field" autocomplete="username" required></div>
+      <div class="form-row"><label>Пароль</label><input type="password" id="loginPass" name="app_password_field" autocomplete="current-password" required></div>
       <button type="submit" style="width:100%;padding:12px">Войти</button>
     </form>
-    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
-      <div class="form-row"><label>Логин</label><input type="text" id="regUser" required minlength="3"></div>
-      <div class="form-row"><label>Пароль</label><input type="password" id="regPass" required minlength="4"></div>
-      <div class="form-row"><label>Ещё раз</label><input type="password" id="regPass2" required></div>
+    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)" autocomplete="off">
+      <div class="form-row"><label>Логин</label><input type="text" id="regUser" name="app_new_login" autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false" required minlength="3"></div>
+      <div class="form-row"><label>Пароль</label><input type="password" id="regPass" name="app_new_password" autocomplete="new-password" required minlength="4"></div>
+      <div class="form-row"><label>Ещё раз</label><input type="password" id="regPass2" name="app_new_password2" autocomplete="new-password" required></div>
       <button type="submit" style="width:100%;padding:12px">Создать</button>
     </form>
-    <form id="guestForm" class="hidden" onsubmit="handleGuest(event)">
-      <div class="form-row"><label>Ваше ФИО</label><input type="text" id="guestFio" required placeholder="Иванов Иван Иванович"></div>
+    <form id="guestForm" class="hidden" onsubmit="handleGuest(event)" autocomplete="off">
+      <div class="form-row"><label>Ваше ФИО</label><input type="text" id="guestFio" name="app_guest_name" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required placeholder="Иванов Иван Иванович"></div>
       <p style="font-size:.85em;color:var(--muted);margin:0 0 14px">Без регистрации.</p>
       <button type="submit" style="width:100%;padding:12px">Продолжить как гость</button>
     </form>
@@ -213,7 +213,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
         <div><h2 style="margin:0" id="editorTitle">Редактор теста</h2><p style="color:var(--muted);font-size:.88em;margin:4px 0 0" id="editorInfo"></p></div>
         <button class="secondary small" onclick="backToTests()">← К тестам</button>
       </div>
-      <div class="form-row"><label>Название теста</label><input type="text" id="editorTestName" oninput="updateTestName(this.value)"></div>
+      <div class="form-row"><label>Название теста</label><input type="text" id="editorTestName" name="app_test_title" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="updateTestName(this.value)"></div>
       <div id="editorMsg"></div>
       <div id="editorList"></div>
       <div class="toolbar"><button onclick="addQuestion()">+ Добавить вопрос</button></div>
@@ -224,9 +224,9 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 <div id="changePassModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeChangePassModal()">
   <div class="modal">
     <h3>Сменить пароль</h3>
-    <div class="form-row"><label>Текущий пароль</label><input type="password" id="chOldPass"></div>
-    <div class="form-row"><label>Новый пароль</label><input type="password" id="chNewPass"></div>
-    <div class="form-row"><label>Новый пароль ещё раз</label><input type="password" id="chNewPass2"></div>
+    <div class="form-row"><label>Текущий пароль</label><input type="password" id="chOldPass" name="app_old_pass" autocomplete="current-password"></div>
+    <div class="form-row"><label>Новый пароль</label><input type="password" id="chNewPass" name="app_new_pass" autocomplete="new-password"></div>
+    <div class="form-row"><label>Новый пароль ещё раз</label><input type="password" id="chNewPass2" name="app_new_pass2" autocomplete="new-password"></div>
     <div id="chPassMsg" style="font-size:.9em;color:var(--fail);margin-bottom:10px"></div>
     <div class="toolbar" style="justify-content:flex-end">
       <button class="secondary" onclick="closeChangePassModal()">Отмена</button>
@@ -238,7 +238,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 <div id="imageModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeImageModal()">
   <div class="modal">
     <h3 id="imageModalTitle">Прикрепить картинку</h3>
-    <div class="form-row"><label>URL картинки</label><input type="text" id="imgUrlInput" placeholder="https://..."></div>
+    <div class="form-row"><label>URL картинки</label><input type="text" id="imgUrlInput" name="app_img_url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="https://..."></div>
     <div class="form-row"><label>или файл</label><input type="file" id="imgFileInput" accept="image/*" onchange="loadImageFile(event)"></div>
     <div id="imgPreviewWrap"></div>
     <div class="toolbar" style="justify-content:flex-end">
@@ -264,8 +264,26 @@ var firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 var db=firebase.firestore();
 // ФИКС: Firestore не принимает undefined — включаем игнорирование
-db.settings({ignoreUndefinedProperties:true});
+try{db.settings({ignoreUndefinedProperties:true});}catch(e){}
+
 var CACHE={users:[],tests:[],history:[]};
+
+/* === ОЧИСТКА ОТ undefined ДЛЯ FIRESTORE === */
+function cleanForFirestore(obj){
+  if(obj===null||obj===undefined)return null;
+  if(typeof obj!=='object')return obj;
+  if(Array.isArray(obj)){
+    return obj.map(function(item){return cleanForFirestore(item)})
+  }
+  var result={};
+  for(var key in obj){
+    if(!obj.hasOwnProperty(key))continue;
+    var val=obj[key];
+    if(val===undefined)continue;
+    result[key]=cleanForFirestore(val)
+  }
+  return result
+}
 
 /* === УТИЛИТЫ === */
 function hashPass(p){
@@ -340,6 +358,18 @@ function getUsers(){return CACHE.users.slice()}
 function getTests(){return CACHE.tests.slice()}
 function getHistory(){return CACHE.history.slice()}
 
+/* === БЕЗОПАСНЫЙ ПОИСК ПО ЛОГИНУ (защита от битых документов) === */
+function findUserByLogin(login){
+  if(!login||typeof login!=='string')return null;
+  var lower=login.toLowerCase();
+  return CACHE.users.find(function(x){
+    return x.login && typeof x.login==='string' && x.login.toLowerCase()===lower
+  })||null
+}
+function loginExists(login){
+  return !!findUserByLogin(login)
+}
+
 /* === СЕССИЯ === */
 var SESSION_KEY='t_session_v2';
 function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY))}catch(e){return null}}
@@ -360,7 +390,7 @@ function initApp(){
     var s=getSession();
     if(s){
       if(s.type==='guest'){enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return}
-      var u=CACHE.users.find(function(x){return x.login===s.login});
+      var u=CACHE.users.find(function(x){return x.login && x.login===s.login});
       if(u){enterApp(u);return}
       setSession(null)
     }
@@ -399,7 +429,7 @@ function handleLogin(e){
   e.preventDefault();
   var login=document.getElementById('loginUser').value.trim();
   var pass=document.getElementById('loginPass').value;
-  var u=CACHE.users.find(function(x){return x.login.toLowerCase()===login.toLowerCase()});
+  var u=findUserByLogin(login);
   if(!u){showMsg('authMsg','err','Пользователь не найден');return}
   if(u.passHash!==hashPass(pass)){showMsg('authMsg','err','Неверный пароль');return}
   setSession({type:'user',login:u.login});
@@ -415,7 +445,7 @@ function handleRegister(e){
   if(login.length<3){showMsg('authMsg','err','Логин минимум 3 символа');return}
   if(pass.length<4){showMsg('authMsg','err','Пароль минимум 4 символа');return}
   if(pass!==pass2){showMsg('authMsg','err','Пароли не совпадают');return}
-  if(CACHE.users.some(function(x){return x.login.toLowerCase()===login.toLowerCase()})){
+  if(loginExists(login)){
     showMsg('authMsg','err','Логин уже занят');return
   }
   var id=genId();
@@ -539,8 +569,6 @@ var cur=0,chk=false,qStats=[],currentSel=[],started=0;
 
 function startTest(){
   if(!currentTest)return;
-  // ФИКСИРУЕМ тест на момент старта — дальше currentTest может измениться,
-  // но activeTest останется тем же
   activeTest={
     id: currentTest._id,
     name: currentTest.name,
@@ -599,6 +627,11 @@ function renderQ(){
     wrap.style.marginTop='10px';
     var inp=document.createElement('textarea');
     inp.id='textAnswerInput';
+    inp.setAttribute('name','app_answer_text');
+    inp.setAttribute('autocomplete','off');
+    inp.setAttribute('autocorrect','off');
+    inp.setAttribute('autocapitalize','off');
+    inp.setAttribute('spellcheck','false');
     inp.placeholder='Введите ваш ответ...';
     inp.value=(sel||'');
     inp.style.cssText='width:100%;padding:12px 16px;font-size:1em;font-family:inherit;border:2px solid var(--input-border);border-radius:10px;background:var(--input-bg);color:var(--text);min-height:50px;resize:vertical';
@@ -764,7 +797,7 @@ function finishTest(){
   }).join('');
   document.getElementById('finalReview').innerHTML='<h3>📝 Разбор ответов</h3>'+reviewHtml;
 
-  // ФИКС: adminCorrect всегда null (не undefined) — Firestore не принимает undefined
+  // Все поля защищены от undefined
   var details=activeTest.questions.map(function(q,i){
     return {
       type:q.type||'choice',
@@ -775,14 +808,13 @@ function finishTest(){
       explanation:q.explanation||'',
       explanationImage:q.explanationImage||'',
       image:q.image||'',
-      attempts:qStats[i].attempts,
+      attempts:qStats[i].attempts||0,
       solved:!!qStats[i].solved,
       choices:qStats[i].choices.slice(),
       adminCorrect:(q.type==='text')?null:null
     }
   });
 
-  // Сохраняем именно activeTest
   var rec={
     testId:activeTest.id,
     testName:activeTest.name,
@@ -800,10 +832,12 @@ function finishTest(){
   };
 
   var id=genId();
-  db.collection('history').doc(id).set(rec).then(function(){
-    CACHE.history.unshift(Object.assign({_id:id},rec));
+  // Рекурсивная очистка — гарантирует отсутствие undefined на любой глубине
+  var cleanRec=cleanForFirestore(rec);
+  db.collection('history').doc(id).set(cleanRec).then(function(){
+    CACHE.history.unshift(Object.assign({_id:id},cleanRec));
     updatePendingBadge();
-    console.log('✓ Результат сохранён:',activeTest.name,'| checkStatus:',rec.checkStatus,'| testId:',activeTest.id);
+    console.log('✓ Результат сохранён:',activeTest.name,'| checkStatus:',cleanRec.checkStatus);
   }).catch(function(e){
     console.error('Ошибка сохранения:',e);
     alert('Результат не сохранён: '+e.message)
@@ -1063,9 +1097,9 @@ function markTextAnswer(resultId,questionIdx,value){
   });
   r.correctCount=correct;
   r.checkStatus=hasText?(allChecked?'checked':'pending'):'checked';
-  db.collection('history').doc(resultId).update({
+  db.collection('history').doc(resultId).update(cleanForFirestore({
     details:r.details,correctCount:r.correctCount,checkStatus:r.checkStatus
-  }).then(function(){
+  })).then(function(){
     updatePendingBadge();
     var box=document.getElementById('adminRes_'+resultId);
     if(box)box.innerHTML=buildResultDetailHTML(r,true);
@@ -1242,8 +1276,8 @@ function renderEditor(){
     if(qtype==='choice'){
       var opts=(q.options||[]).map(function(opt,oi){
         return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'+
-          '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" style="width:auto">'+
-          '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'" style="flex:1;padding:8px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text)">'+
+          '<input type="radio" name="app_correct_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" style="width:auto">'+
+          '<input type="text" name="app_option_'+qi+'_'+oi+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'" style="flex:1;padding:8px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text)">'+
           '<button class="small secondary" onclick="delOpt('+qi+','+oi+')" '+((q.options||[]).length<=2?'disabled':'')+'>✕</button>'+
         '</div>'
       }).join('');
@@ -1251,7 +1285,7 @@ function renderEditor(){
         '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>';
     } else {
       answerBlock='<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:var(--muted);margin-bottom:4px;font-weight:600">ПРАВИЛЬНЫЙ ОТВЕТ</label>'+
-        '<input type="text" value="'+esc(q.correctText||'')+'" oninput="updCorrectText('+qi+',this.value)" placeholder="Эталонный ответ" style="width:100%;padding:8px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text)">'+
+        '<input type="text" name="app_correct_text_'+qi+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="'+esc(q.correctText||'')+'" oninput="updCorrectText('+qi+',this.value)" placeholder="Эталонный ответ" style="width:100%;padding:8px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text)">'+
       '</div>';
     }
     return '<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;background:var(--card)">'+
@@ -1259,13 +1293,13 @@ function renderEditor(){
         '<button class="small danger" onclick="delQ('+qi+')">Удалить</button></div>'+
       typeSwitch+
       '<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:var(--muted);margin-bottom:4px;font-weight:600">ТЕКСТ</label>'+
-        '<input type="text" value="'+esc(q.question)+'" oninput="updQ('+qi+',this.value)" style="width:100%;padding:8px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text)"></div>'+
+        '<input type="text" name="app_question_'+qi+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="'+esc(q.question)+'" oninput="updQ('+qi+',this.value)" style="width:100%;padding:8px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text)"></div>'+
       '<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:var(--muted);margin-bottom:4px;font-weight:600">КАРТИНКА ВОПРОСА</label>'+imgBlock+
         '<div style="display:flex;gap:8px;margin-top:8px"><button class="small secondary" onclick="openImageModal('+qi+')">🖼 '+(q.image?'Заменить':'Прикрепить')+'</button>'+
         (q.image?'<button class="small danger" onclick="removeQImage('+qi+')">Убрать</button>':'')+'</div></div>'+
       answerBlock+
       '<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:var(--muted);margin-bottom:4px;font-weight:600">💡 ПОЯСНЕНИЕ</label>'+
-        '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Объясните, почему этот ответ правильный" style="width:100%;min-height:80px;padding:8px;border:1px solid var(--input-border);border-radius:6px;font-family:inherit;font-size:.92em;background:var(--input-bg);color:var(--text)">'+esc(q.explanation||'')+'</textarea>'+
+        '<textarea name="app_explanation_'+qi+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="updExplanation('+qi+',this.value)" placeholder="Объясните, почему этот ответ правильный" style="width:100%;min-height:80px;padding:8px;border:1px solid var(--input-border);border-radius:6px;font-family:inherit;font-size:.92em;background:var(--input-bg);color:var(--text)">'+esc(q.explanation||'')+'</textarea>'+
         explImgBlock+
         '<div style="display:flex;gap:8px;margin-top:8px"><button class="small secondary" onclick="openExplanationImageModal('+qi+')">🖼 '+(q.explanationImage?'Заменить':'Картинка к пояснению')+'</button>'+
         (q.explanationImage?'<button class="small danger" onclick="removeExplanationImage('+qi+')">Убрать</button>':'')+'</div></div>'+
@@ -1276,7 +1310,7 @@ function renderEditor(){
 function saveTestField(updates){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
-  db.collection('tests').doc(editTestId).update(updates).catch(function(e){alert('Ошибка: '+e.message)})
+  db.collection('tests').doc(editTestId).update(cleanForFirestore(updates)).catch(function(e){alert('Ошибка: '+e.message)})
 }
 function updateTestName(v){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
