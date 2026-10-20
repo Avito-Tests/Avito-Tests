@@ -1991,4 +1991,79 @@ function setQuestionType(qi,newType){
   saveTestField({questions:t.questions});renderEditor()
 }
 function updQ(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].question=v;saveTestField({questions:t.questions})}
-function updOpt(qi,oi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[
+function updOpt(qi,oi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options[oi]=v;saveTestField({questions:t.questions})}
+function updCorrectText(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correctText=v;saveTestField({questions:t.questions})}
+function updExplanation(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].explanation=v;saveTestField({questions:t.questions})}
+function setCorrect(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correct=oi;saveTestField({questions:t.questions})}
+function addOpt(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options.push('');saveTestField({questions:t.questions});renderEditor()}
+function delOpt(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t||t.questions[qi].options.length<=2)return;t.questions[qi].options.splice(oi,1);if(t.questions[qi].correct===oi)t.questions[qi].correct=0;else if(t.questions[qi].correct>oi)t.questions[qi].correct--;saveTestField({questions:t.questions});renderEditor()}
+function delQ(qi){if(!confirm('Удалить вопрос?'))return;var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions.splice(qi,1);saveTestField({questions:t.questions});renderEditor()}
+
+/* === КАРТИНКИ ВОПРОСОВ === */
+var imgMode=null,imgTargetQ=null,imgPendingData=null;
+
+function openImageModal(qi){
+  imgMode='question';imgTargetQ=qi;imgPendingData=null;
+  document.getElementById('imgUrlInput').value='';
+  document.getElementById('imgFileInput').value='';
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  var curImg=t?t.questions[qi].image:'';
+  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img src="'+esc(curImg)+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">':'';
+  document.getElementById('imageModalTitle').textContent='Картинка к вопросу';
+  document.getElementById('imageModal').classList.remove('hidden')
+}
+function openExplanationImageModal(qi){
+  imgMode='explanation';imgTargetQ=qi;imgPendingData=null;
+  document.getElementById('imgUrlInput').value='';
+  document.getElementById('imgFileInput').value='';
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  var curImg=t?t.questions[qi].explanationImage:'';
+  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img src="'+esc(curImg)+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">':'';
+  document.getElementById('imageModalTitle').textContent='Картинка к пояснению';
+  document.getElementById('imageModal').classList.remove('hidden')
+}
+function closeImageModal(){
+  document.getElementById('imageModal').classList.add('hidden');
+  imgMode=null;imgTargetQ=null;imgPendingData=null
+}
+function loadImageFile(e){
+  var f=e.target.files[0];if(!f)return;
+  if(f.size>800*1024){alert('Файл больше 800 КБ');e.target.value='';return}
+  var r=new FileReader();
+  r.onload=function(ev){
+    imgPendingData=ev.target.result;
+    document.getElementById('imgPreviewWrap').innerHTML='<img src="'+imgPendingData+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">'
+  };
+  r.readAsDataURL(f)
+}
+function saveImage(){
+  if(imgTargetQ===null||!imgMode)return;
+  var url=document.getElementById('imgUrlInput').value.trim();
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  var newVal='';
+  if(imgPendingData)newVal=imgPendingData;
+  else if(url)newVal=url;
+  if(imgMode==='question'){t.questions[imgTargetQ].image=newVal}
+  else{t.questions[imgTargetQ].explanationImage=newVal}
+  saveTestField({questions:t.questions});closeImageModal();renderEditor()
+}
+function clearImage(){
+  document.getElementById('imgUrlInput').value='';
+  document.getElementById('imgFileInput').value='';
+  imgPendingData=null;
+  document.getElementById('imgPreviewWrap').innerHTML=''
+}
+function removeQImage(qi){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  t.questions[qi].image='';saveTestField({questions:t.questions});renderEditor()
+}
+function removeExplanationImage(qi){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  t.questions[qi].explanationImage='';saveTestField({questions:t.questions});renderEditor()
+}
+
+/* === СТАРТ === */
+initApp();
+</script>
+</body>
+</html>
