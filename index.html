@@ -358,7 +358,7 @@ function getUsers(){return CACHE.users.slice()}
 function getTests(){return CACHE.tests.slice()}
 function getHistory(){return CACHE.history.slice()}
 
-/* === БЕЗОПАСНЫЙ ПОИСК ПО ЛОГИНУ (защита от битых документов) === */
+/* === БЕЗОПАСНЫЙ ПОИСК ПО ЛОГИНУ === */
 function findUserByLogin(login){
   if(!login||typeof login!=='string')return null;
   var lower=login.toLowerCase();
@@ -368,6 +368,50 @@ function findUserByLogin(login){
 }
 function loginExists(login){
   return !!findUserByLogin(login)
+}
+
+/* === ПОДПИСКА НА ИЗМЕНЕНИЯ HISTORY В РЕАЛЬНОМ ВРЕМЕНИ === */
+/* При добавлении/изменении/удалении результата — обновляем CACHE.history
+   и перерисовываем активную вкладку. Работает у всех открытых вкладок. */
+function subscribeToHistory(){
+  db.collection('history').onSnapshot(function(snap){
+    var changed=false;
+    snap.docChanges().forEach(function(change){
+      if(change.type==='added'){
+        var data=Object.assign({_id:change.doc.id},change.doc.data());
+        // Проверяем, нет ли уже в кэше (чтобы не дублировать)
+        var exists=CACHE.history.some(function(r){return r._id===data._id});
+        if(!exists){
+          CACHE.history.unshift(data);
+          changed=true;
+        }
+      } else if(change.type==='modified'){
+        var data2=Object.assign({_id:change.doc.id},change.doc.data());
+        var idx=CACHE.history.findIndex(function(r){return r._id===data2._id});
+        if(idx!==-1){
+          CACHE.history[idx]=data2;
+          changed=true;
+        }
+      } else if(change.type==='removed'){
+        var beforeLen=CACHE.history.length;
+        CACHE.history=CACHE.history.filter(function(r){return r._id!==change.doc.id});
+        if(CACHE.history.length!==beforeLen)changed=true;
+      }
+    });
+    if(changed){
+      updatePendingBadge();
+      // Обновляем активную вкладку, если это результаты/проверка
+      var activeTab=document.querySelector('.tab.active');
+      if(activeTab){
+        var name=activeTab.dataset.tab;
+        if(name==='results'&&currentUser&&currentUser.role==='admin')renderResults();
+        if(name==='pending'&&currentUser&&currentUser.role==='admin')renderPending();
+        if(name==='myresults'&&currentUser&&currentUser.role!=='admin')renderMyResults();
+      }
+    }
+  }, function(error){
+    console.error('Ошибка подписки на history:',error);
+  });
 }
 
 /* === СЕССИЯ === */
@@ -387,6 +431,7 @@ function initApp(){
     return ensureAdminAndDemos()
   }).then(function(){
     hideLoading();
+    subscribeToHistory();  // ← ПОДПИСКА НА РЕАЛЬНОЕ ВРЕМЯ
     var s=getSession();
     if(s){
       if(s.type==='guest'){enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return}
@@ -832,10 +877,10 @@ function finishTest(){
   };
 
   var id=genId();
-  // Рекурсивная очистка — гарантирует отсутствие undefined на любой глубине
   var cleanRec=cleanForFirestore(rec);
   db.collection('history').doc(id).set(cleanRec).then(function(){
-    CACHE.history.unshift(Object.assign({_id:id},cleanRec));
+    // НЕ добавляем вручную в CACHE.history — это сделает onSnapshot
+    // (иначе будет дубль)
     updatePendingBadge();
     console.log('✓ Результат сохранён:',activeTest.name,'| checkStatus:',cleanRec.checkStatus);
   }).catch(function(e){
@@ -1008,15 +1053,8 @@ function deleteOneResult(id){
   var who=r.userRole==='guest'?r.fio:r.user;
   if(!confirm('Удалить результат «'+r.testName+'» от '+who+'?'))return;
   db.collection('history').doc(id).delete().then(function(){
-    CACHE.history=CACHE.history.filter(function(x){return x._id!==id});
+    // CACHE.history обновится через onSnapshot
     updatePendingBadge();
-    var activeTab=document.querySelector('.tab.active');
-    if(activeTab){
-      var name=activeTab.dataset.tab;
-      if(name==='results')renderResults();
-      if(name==='pending')renderPending();
-      if(name==='myresults')renderMyResults()
-    }
   }).catch(function(e){alert('Ошибка удаления: '+e.message)})
 }
 
@@ -1100,40 +1138,8 @@ function markTextAnswer(resultId,questionIdx,value){
   db.collection('history').doc(resultId).update(cleanForFirestore({
     details:r.details,correctCount:r.correctCount,checkStatus:r.checkStatus
   })).then(function(){
+    // Перерисовка произойдёт через onSnapshot
     updatePendingBadge();
-    var box=document.getElementById('adminRes_'+resultId);
-    if(box)box.innerHTML=buildResultDetailHTML(r,true);
-    var pendBox=document.getElementById('pendRes_'+resultId);
-    if(pendBox){
-      if(r.checkStatus!=='pending'){
-        var pItem=document.querySelector('#pendingList .history-item[data-id="'+resultId+'"]');
-        if(pItem)pItem.remove();
-        if(!document.querySelectorAll('#pendingList .history-item').length){
-          document.getElementById('pendingList').innerHTML='<div class="empty-state">✅ Все результаты проверены</div>'
-        }
-      } else {
-        pendBox.innerHTML=buildResultDetailHTML(r,true)
-      }
-    }
-    var item=document.querySelector('#historyList .history-item[data-id="'+resultId+'"]');
-    if(item){
-      var head=item.querySelector('.history-head');
-      var who=r.userRole==='guest'?'👤 '+esc(r.fio)+' (гость)':'👤 '+esc(r.user);
-      var sb='',st='';
-      if(r.checkStatus==='pending'){
-        sb='<span class="status-badge status-pending">⏳ На проверке</span>';
-        st='<span style="color:var(--warn)">Ожидает проверки</span>'
-      } else {
-        var pct=r.questions?Math.round(r.correctCount/r.questions*100):0;
-        st='<span class="result-score">'+r.correctCount+'/'+r.questions+'</span> <span style="color:var(--muted)">('+pct+'%)</span>';
-        sb='<span class="status-badge '+(pct>=60?'status-checked':'status-fail')+'">'+(pct>=60?'✓ Зачтено':'✗ Не зачтено')+'</span>'
-      }
-      head.innerHTML='<div><div class="h-title">'+esc(r.date)+' — <span style="color:var(--accent)">'+esc(r.testName)+'</span></div>'+
-        '<div class="h-meta">'+who+' • '+r.questions+' вопр. • '+r.totalAttempts+' попыток</div>'+
-        '<div style="margin-top:6px">'+st+' '+sb+'</div></div>'+
-        '<div class="h-actions"><span class="chev" onclick="toggleAdminResult(\''+resultId+'\')">▸</span>'+
-        '<button class="small danger" onclick="deleteOneResult(\''+resultId+'\')">🗑</button></div>'
-    }
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 /* === ПОЛЬЗОВАТЕЛИ === */
