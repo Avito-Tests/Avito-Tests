@@ -108,11 +108,9 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .tag-guest{background:var(--ok-bg);color:var(--ok)}
 .tag-user{background:var(--info-bg);color:var(--info)}
 .tag-admin{background:var(--warn-bg);color:var(--warn)}
-/* Кнопка «Аккаунт» */
 .account-btn{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 12px 6px 6px;cursor:pointer;color:var(--text);font-weight:600;transition:.15s}
 .account-btn:hover{border-color:var(--accent);background:var(--surface)}
 .account-btn .name-short{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* Профиль / статистика */
 .account-header{display:flex;align-items:center;gap:20px;margin-bottom:20px;flex-wrap:wrap}
 .account-avatar-wrap{position:relative}
 .account-avatar-edit{position:absolute;bottom:-4px;right:-4px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#0f172a;border:2px solid var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9em;padding:0}
@@ -124,6 +122,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .stat-toggle button.active{background:var(--card);color:var(--accent)}
 .attempt-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
 .attempt-row:last-child{border-bottom:none}
+.warn-note{margin-top:8px;font-size:.85em;color:var(--warn)}
 </style>
 </head>
 <body>
@@ -223,7 +222,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
   <div id="tab-myresults" class="hidden">
     <div class="card">
       <h2>📊 Мои результаты</h2>
-      <p style="color:var(--muted);font-size:.9em">Здесь только ваши результаты.</p>
+      <p style="color:var(--muted);font-size:.9em">Здесь только ваши результаты. Верным считается вопрос, где ответ дан с первой попытки.</p>
       <div id="myResultsList"></div>
     </div>
   </div>
@@ -248,6 +247,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
   <div id="tab-stats" class="hidden">
     <div class="card">
       <h2>📈 Статистика по вопросам</h2>
+      <p style="color:var(--muted);font-size:.9em">Верным считается вопрос, на который ответ дан с первой попытки.</p>
       <div class="form-row" style="max-width:400px"><label>Тест:</label><select id="statsTestFilter" onchange="renderStats()"></select></div>
       <div id="statsContent"></div>
     </div>
@@ -424,7 +424,6 @@ function getAvatarClass(role){
   if(role==='guest')return 'avatar avatar-guest';
   return 'avatar avatar-user'
 }
-/* HTML аватара: если есть user.avatarUrl — картинка, иначе буква */
 function avatarHTML(user,size){
   var cls=getAvatarClass(user.role)+((size==='lg')?' avatar-lg':'');
   var style='';
@@ -433,7 +432,6 @@ function avatarHTML(user,size){
   }
   return '<div class="'+cls+'" style="'+style.slice(1)+'">'+(user.avatarUrl?'':getInitial(user.login))+'</div>'
 }
-/* Строка пользователя для карточек результатов */
 function makeUserLine(r){
   var name=r.userRole==='guest'?(r.fio||r.user):r.user;
   var initial=getInitial(name);
@@ -452,6 +450,23 @@ function makeUserLine(r){
       '<span class="name">'+esc(name)+'</span>'+tag+
     '</div>'+
   '</div>'
+}
+
+/* === ВЕРНО С ПЕРВОЙ ПОПЫТКИ === */
+/* Вопрос считается верным, только если ответ дан с первой попытки */
+function isCorrectFirstTry(d){
+  if(!d)return false;
+  var firstTry = (d.attempts||0)===1;
+  if(d.type==='choice') return !!d.solved && firstTry;
+  return d.adminCorrect===true && firstTry;
+}
+/* Пересчитать correctCount по массиву details */
+function recalcCorrectCount(details){
+  var c=0;
+  (details||[]).forEach(function(d){
+    if(isCorrectFirstTry(d)) c++;
+  });
+  return c;
 }
 
 /* === ЗАГРУЗКА === */
@@ -502,7 +517,7 @@ function findUserByLogin(login){
 }
 function loginExists(login){return !!findUserByLogin(login)}
 
-/* === ПОДПИСКА (без перерисовки — иначе проверка «выкидывает») === */
+/* === ПОДПИСКА (без перерисовки pending) === */
 function subscribeToHistory(){
   db.collection('history').onSnapshot(function(snap){
     var changed=false;
@@ -523,15 +538,12 @@ function subscribeToHistory(){
     });
     if(changed){
       updatePendingBadge();
-      // Перерисовка вкладки только на added/removed (когда реально пришёл новый или удалён),
-      // но НЕ на modified — иначе проверка письменных «выкидывает» из карточки.
       var activeTab=document.querySelector('.tab.active');
       if(activeTab){
         var name=activeTab.dataset.tab;
         if(name==='results'&&currentUser&&currentUser.role==='admin')renderResults();
         if(name==='myresults'&&currentUser&&currentUser.role!=='admin')renderMyResults();
         if(name==='stats'&&currentUser&&currentUser.role==='admin')renderStats();
-        // pending не перерисовываем — там точечное обновление в markTextAnswer
       }
     }
   },function(error){console.error('Ошибка подписки:',error)})
@@ -546,7 +558,7 @@ function setSession(s){s?localStorage.setItem(SESSION_KEY,JSON.stringify(s)):loc
 var currentUser=null;
 var currentTest=null;
 var activeTest=null;
-var accountScope='self'; // для админа: 'self' | 'all'
+var accountScope='self';
 
 /* === ИНИЦИАЛИЗАЦИЯ === */
 function initApp(){
@@ -642,7 +654,6 @@ function enterApp(u){
   currentUser=u;
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  // Аватар в шапке
   var av=document.getElementById('currentAvatar');
   av.className=getAvatarClass(u.role);
   av.textContent=u.avatarUrl?'':getInitial(u.login);
@@ -738,10 +749,10 @@ function openTestStart(id){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
   document.getElementById('startTitle').textContent=t.name;
-  var info='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены.';
+  var info='В тесте '+t.questions.length+' вопрос(ов). Верным считается ответ с первой попытки.';
   if(t.timeLimit&&t.timeLimit>0)info+=' ⏱️ Время: '+t.timeLimit+' мин.';
   if(t.shuffle&&t.shuffle!=='none')info+=' 🔀 Перемешивание: '+(t.shuffle==='both'?'вопросы и варианты':'вопросы')+'.';
-  if(typeof t.passCount==='number'&&t.passCount>0)info+=' 🎯 Для зачёта нужно верных: '+t.passCount+'.';
+  if(typeof t.passCount==='number'&&t.passCount>0)info+=' 🎯 Для зачёта нужно верных с 1-й попытки: '+t.passCount+'.';
   document.getElementById('startInfo').textContent=info;
 
   var draft=getDraft(t._id);
@@ -1008,7 +1019,7 @@ function checkAnswer(){
       saveDraft();
       var rb=document.getElementById('resultBox');
       rb.className='result ok';
-      rb.textContent='✅ Верно! Попыток: '+qStats[cur].attempts;
+      rb.textContent='✅ Верно! Попыток: '+qStats[cur].attempts+(qStats[cur].attempts>1?' (но не с первой — в статистике будет как неверный)':'');
       document.getElementById('checkBtn').classList.add('hidden');
       var nb=document.getElementById('nextBtn');
       nb.classList.remove('hidden');
@@ -1073,17 +1084,34 @@ function finishTest(timeUp){
   var tot=qStats.reduce(function(s,q){return s+q.attempts},0);
   var el=Math.round((Date.now()-started)/1000);
   var hasText=activeTest.questions.some(function(q){return q.type==='text'});
-  var correctCount=0;
-  activeTest.questions.forEach(function(q,i){
-    if(q.type==='choice'&&qStats[i].solved)correctCount++;
+
+  // Считаем верным только если ответ дан с ПЕРВОЙ попытки
+  var details=activeTest.questions.map(function(q,i){
+    var qtype=q.type||'choice';
+    var solved = qtype==='choice' ? !!qStats[i].solved : false;
+    return {
+      type:qtype,
+      question:q.question||'',
+      options:q.options||[],
+      correct:typeof q.correct==='number'?q.correct:0,
+      correctText:q.correctText||'',
+      explanation:q.explanation||'',
+      explanationImage:q.explanationImage||'',
+      image:q.image||'',
+      attempts:qStats[i].attempts||0,
+      solved:solved,
+      choices:qStats[i].choices.slice(),
+      adminCorrect:(qtype==='text')?null:null
+    }
   });
+  var correctCount=recalcCorrectCount(details);
 
   var passCount=typeof activeTest.passCount==='number'?activeTest.passCount:0;
   var pct=activeTest.questions.length?Math.round(correctCount/activeTest.questions.length*100):0;
 
   document.getElementById('finalStats').innerHTML=
     '<div class="stat"><b>'+activeTest.questions.length+'</b>вопросов</div>'+
-    '<div class="stat"><b>'+correctCount+'</b>верно</div>'+
+    '<div class="stat"><b>'+correctCount+'</b>с 1-й попытки</div>'+
     '<div class="stat"><b>'+pct+'%</b>результат</div>'+
     (passCount>0?'<div class="stat"><b>'+passCount+'</b>порог</div>':'')+
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
@@ -1092,18 +1120,24 @@ function finishTest(timeUp){
   var reviewHtml=activeTest.questions.map(function(q,i){
     var st=qStats[i];
     var qtype=q.type||'choice';
+    var solvedFirstTry = qtype==='choice'
+      ? (st.solved && st.attempts===1)
+      : false; // письменные ещё не проверены
     var contentHtml='';
     if(qtype==='choice'){
       contentHtml='<div>'+(q.options||[]).map(function(opt,oi){
         var cls='q-review-opt';
-        if(oi===q.correct)cls+=' correct';
-        if(st.choices.indexOf(oi)!==-1&&oi!==q.correct)cls+=' chosen wrong';
+        if(oi===q.correct && solvedFirstTry)cls+=' correct';
+        if(st.choices.indexOf(oi)!==-1 && oi!==q.correct)cls+=' chosen wrong';
         else if(st.choices.indexOf(oi)!==-1)cls+=' chosen';
         var marks=[];
-        if(oi===q.correct)marks.push('✓');
+        if(oi===q.correct && solvedFirstTry)marks.push('✓');
         if(st.choices.indexOf(oi)!==-1)marks.push('👈');
         return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
-      }).join('')+'</div>'
+      }).join('')+'</div>';
+      if(st.solved && !solvedFirstTry){
+        contentHtml+='<div class="warn-note">⚠️ Правильный ответ найден, но не с первой попытки ('+st.attempts+' попыток) — считается <b>неверным</b></div>';
+      }
     } else {
       var ua=st.choices.length?st.choices[st.choices.length-1]:'';
       contentHtml='<div>'+
@@ -1121,23 +1155,6 @@ function finishTest(timeUp){
     return '<div class="q-review"><div class="q-review-title">'+(i+1)+'. '+esc(q.question||'')+tb+'</div>'+imgHtml+contentHtml+explHtml+'</div>'
   }).join('');
   document.getElementById('finalReview').innerHTML='<h3>📝 Разбор ответов</h3>'+reviewHtml;
-
-  var details=activeTest.questions.map(function(q,i){
-    return {
-      type:q.type||'choice',
-      question:q.question||'',
-      options:q.options||[],
-      correct:typeof q.correct==='number'?q.correct:0,
-      correctText:q.correctText||'',
-      explanation:q.explanation||'',
-      explanationImage:q.explanationImage||'',
-      image:q.image||'',
-      attempts:qStats[i].attempts||0,
-      solved:!!qStats[i].solved,
-      choices:qStats[i].choices.slice(),
-      adminCorrect:(q.type==='text')?null:null
-    }
-  });
 
   var rec={
     testId:activeTest.id,
@@ -1161,7 +1178,7 @@ function finishTest(timeUp){
   db.collection('history').doc(id).set(cleanForFirestore(rec)).then(function(){
     clearDraft(activeTest.id);
     updatePendingBadge();
-    console.log('✓ Результат сохранён:',activeTest.name,'| верных',correctCount,'| порог',passCount);
+    console.log('✓ Результат сохранён:',activeTest.name,'| с 1-й попытки',correctCount,'| порог',passCount);
   }).catch(function(e){
     console.error('Ошибка сохранения:',e);
     alert('Результат не сохранён: '+e.message)
@@ -1355,18 +1372,36 @@ function buildResultDetailHTML(r,isAdmin){
   var details=r.details||[];
   if(!details.length)return '<p style="color:var(--muted)">Детали недоступны</p>';
 
-  var ch=0,tTotal=0,tOk=0,tPend=0;
+  // Правильно только если с 1-й попытки
+  var chFirst=0, chOverall=0, tTotal=0, tOkFirst=0, tOkOverall=0, tPend=0;
   details.forEach(function(d){
-    if(d.type==='choice'){if(d.solved)ch++}
-    else{tTotal++;if(d.adminCorrect===true)tOk++;else if(d.adminCorrect===false){}else tPend++}
+    if(d.type==='choice'){
+      if(d.solved){
+        chOverall++;
+        if((d.attempts||0)===1) chFirst++;
+      }
+    } else {
+      tTotal++;
+      if(d.adminCorrect===true){
+        tOkOverall++;
+        if((d.attempts||0)===1) tOkFirst++;
+      } else if(d.adminCorrect===false){
+        // неверно — не считаем
+      } else {
+        tPend++;
+      }
+    }
   });
-  var totalCorrect=ch+tOk;
+  var totalCorrectFirst=chFirst+tOkFirst;
+  var totalCorrectOverall=chOverall+tOkOverall;
   var passCount=typeof r.passCount==='number'?r.passCount:0;
+
   var summaryHtml='<div class="summary-grid">'+
-    '<div class="summary-box"><div class="val">'+totalCorrect+'/'+details.length+'</div><div class="lbl">итого верных</div></div>'+
+    '<div class="summary-box"><div class="val">'+totalCorrectFirst+'/'+details.length+'</div><div class="lbl">верных с 1-й попытки</div></div>'+
+    '<div class="summary-box"><div class="val" style="color:var(--muted)">'+totalCorrectOverall+'/'+details.length+'</div><div class="lbl">верных в итоге</div></div>'+
     (passCount>0?'<div class="summary-box"><div class="val">'+passCount+'</div><div class="lbl">🎯 порог</div></div>':'')+
-    '<div class="summary-box"><div class="val">'+ch+'</div><div class="lbl">📋 верно</div></div>'+
-    (tTotal>0?'<div class="summary-box"><div class="val">'+tOk+'/'+tTotal+'</div><div class="lbl">✍️ проверено</div></div>':'')+
+    '<div class="summary-box"><div class="val">'+chOverall+'</div><div class="lbl">📋 решено</div></div>'+
+    (tTotal>0?'<div class="summary-box"><div class="val">'+tOkOverall+'/'+tTotal+'</div><div class="lbl">✍️ проверено</div></div>':'')+
     (tPend>0?'<div class="summary-box" style="background:var(--warn-bg)"><div class="val" style="color:var(--warn)">'+tPend+'</div><div class="lbl" style="color:var(--warn)">⏳ ждут</div></div>':'')+
     '<div class="summary-box"><div class="val">'+r.totalAttempts+'</div><div class="lbl">попыток</div></div>'+
   '</div>';
@@ -1375,20 +1410,31 @@ function buildResultDetailHTML(r,isAdmin){
     var qtype=d.type||'choice';
     var contentHtml='';
     if(qtype==='choice'){
+      var solvedFirstTry = d.solved && (d.attempts||0)===1;
       contentHtml='<div>'+(d.options||[]).map(function(opt,oi){
         var cls='q-review-opt';
-        if(oi===d.correct)cls+=' correct';
+        // Подсвечиваем правильный только если с 1-й попытки
+        if(oi===d.correct && solvedFirstTry)cls+=' correct';
         if(d.choices&&d.choices.indexOf(oi)!==-1&&oi!==d.correct)cls+=' chosen wrong';
         else if(d.choices&&d.choices.indexOf(oi)!==-1)cls+=' chosen';
         var marks=[];
         if(d.choices&&d.choices.indexOf(oi)!==-1)marks.push('👈');
-        if(oi===d.correct)marks.push('✓');
+        if(oi===d.correct && solvedFirstTry)marks.push('✓');
         return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
-      }).join('')+'</div>'
+      }).join('')+'</div>';
+      if(d.solved && !solvedFirstTry){
+        contentHtml+='<div class="warn-note">⚠️ Правильный ответ найден, но не с первой попытки ('+d.attempts+' попыток) — считается <b>неверным</b></div>';
+      }
+      if(!d.solved){
+        contentHtml+='<div class="warn-note">❌ Вопрос не решён</div>';
+      }
     } else {
       var ua=d.choices&&d.choices.length?d.choices[d.choices.length-1]:'';
       var mark='';
-      if(d.adminCorrect===true)mark='<span class="status-badge status-checked">✓ Верно</span>';
+      if(d.adminCorrect===true){
+        if((d.attempts||0)===1) mark='<span class="status-badge status-checked">✓ Верно (с 1-й)</span>';
+        else mark='<span class="status-badge status-fail">✗ Неверно (не с 1-й попытки, '+d.attempts+' попыток)</span>';
+      }
       else if(d.adminCorrect===false)mark='<span class="status-badge status-fail">✗ Неверно</span>';
       else mark='<span class="status-badge status-pending">⏳ Не проверено</span>';
       var btns='';
@@ -1418,17 +1464,22 @@ function buildResultDetailHTML(r,isAdmin){
   return summaryHtml+detailsHtml
 }
 
-/* === ПРОВЕРКА ПИСЬМЕННЫХ — с точечным обновлением (не выкидывает) === */
+/* === ПРОВЕРКА ПИСЬМЕННЫХ — пересчёт с 1-й попытки === */
 function markTextAnswer(resultId,questionIdx,value){
   var r=CACHE.history.find(function(x){return x._id===resultId});
   if(!r)return;
   r.details[questionIdx].adminCorrect=value;
-  var correct=0,allChecked=true,hasText=false;
+
+  var allChecked=true,hasText=false;
   r.details.forEach(function(d){
-    if(d.type==='choice'){if(d.solved)correct++}
-    else{hasText=true;if(d.adminCorrect===true)correct++;if(d.adminCorrect===null||d.adminCorrect===undefined)allChecked=false}
+    if(d.type!=='choice'){
+      hasText=true;
+      if(d.adminCorrect===null||d.adminCorrect===undefined)allChecked=false;
+    }
   });
-  r.correctCount=correct;
+
+  // Пересчёт correctCount: только с 1-й попытки
+  r.correctCount=recalcCorrectCount(r.details);
   r.checkStatus=hasText?(allChecked?'checked':'pending'):'checked';
 
   db.collection('history').doc(resultId).update(cleanForFirestore({
@@ -1436,14 +1487,12 @@ function markTextAnswer(resultId,questionIdx,value){
   })).then(function(){
     updatePendingBadge();
 
-    // Точечное обновление — только блок этого результата
     var box=document.getElementById('pendRes_'+resultId);
     if(box)box.innerHTML=buildResultDetailHTML(r,true);
 
     var abox=document.getElementById('adminRes_'+resultId);
     if(abox)abox.innerHTML=buildResultDetailHTML(r,true);
 
-    // Если полностью проверен — убираем из «На проверку»
     if(r.checkStatus!=='pending'){
       var pitem=document.querySelector('#pendingList .history-item[data-id="'+resultId+'"]');
       if(pitem)pitem.remove();
@@ -1454,7 +1503,6 @@ function markTextAnswer(resultId,questionIdx,value){
       }
     }
 
-    // Обновляем шапку в «Все результаты», если карточка там
     var ritem=document.querySelector('#historyList .history-item[data-id="'+resultId+'"]');
     if(ritem){
       var meta=ritem.querySelector('.h-meta');
@@ -1503,11 +1551,17 @@ function renderStats(){
   var totalRuns=results.length;
   var checkedRuns=results.filter(function(r){return r.checkStatus==='checked'}).length;
   var pendingRuns=results.filter(function(r){return r.checkStatus==='pending'}).length;
+
+  // Сводка — тоже «с 1-й попытки»
   var totalCorrectAll=0;
   var totalQuestionsAll=0;
   results.forEach(function(r){
-    totalCorrectAll+=(r.correctCount||0);
     totalQuestionsAll+=r.questions;
+    var c=0;
+    (r.details||[]).forEach(function(d){
+      if(isCorrectFirstTry(d)) c++;
+    });
+    totalCorrectAll+=c;
   });
   var avgPct=totalQuestionsAll?Math.round(totalCorrectAll/totalQuestionsAll*100):0;
 
@@ -1515,46 +1569,25 @@ function renderStats(){
     '<div class="summary-box"><div class="val">'+totalRuns+'</div><div class="lbl">всего прохождений</div></div>'+
     '<div class="summary-box"><div class="val">'+checkedRuns+'</div><div class="lbl">проверено</div></div>'+
     (pendingRuns>0?'<div class="summary-box" style="background:var(--warn-bg)"><div class="val" style="color:var(--warn)">'+pendingRuns+'</div><div class="lbl" style="color:var(--warn)">на проверке</div></div>':'')+
-    '<div class="summary-box"><div class="val">'+avgPct+'%</div><div class="lbl">средний результат</div></div>'+
+    '<div class="summary-box"><div class="val">'+avgPct+'%</div><div class="lbl">верных с 1-й попытки</div></div>'+
   '</div>';
 
   var qStatsArr=(test.questions||[]).map(function(q,qi){
-    var asked=0,correctFirstTry=0,attemptsSum=0,overallCorrect=0;
+    var asked=0,correctFirst=0,overallCorrect=0,attemptsSum=0;
     results.forEach(function(r){
       var d=r.details[qi];
       if(!d)return;
       asked++;
       attemptsSum+=(d.attempts||0);
-
-      var solvedHere=false;
-      if(d.type==='choice'){
-        if(d.solved){
-          overallCorrect++;
-          solvedHere=true;
-        }
-      } else {
-        if(d.adminCorrect===true){
-          overallCorrect++;
-          solvedHere=true;
-        }
-      }
-
-      // В статистику идёт ТОЛЬКО если решён с первой попытки
-      if(solvedHere && (d.attempts||0)===1){
-        correctFirstTry++;
-      }
+      // в итоге правильный
+      var solvedHere = (d.type==='choice') ? !!d.solved : d.adminCorrect===true;
+      if(solvedHere) overallCorrect++;
+      // с 1-й попытки
+      if(solvedHere && (d.attempts||0)===1) correctFirst++;
     });
-    var pct=asked?Math.round(correctFirstTry/asked*100):0;
+    var pct=asked?Math.round(correctFirst/asked*100):0;
     var avgAttempts=asked?(attemptsSum/asked).toFixed(1):0;
-    return {
-      question:q.question||'(без текста)',
-      type:q.type||'choice',
-      asked:asked,
-      correct:correctFirstTry,      // для статистики — только «с первой попытки»
-      overallCorrect:overallCorrect,// справочно
-      pct:pct,
-      avgAttempts:avgAttempts
-    }
+    return {question:q.question||'(без текста)',type:q.type||'choice',asked:asked,correctFirst:correctFirst,overallCorrect:overallCorrect,pct:pct,avgAttempts:avgAttempts}
   });
 
   var questionsHtml=qStatsArr.map(function(s,i){
@@ -1564,11 +1597,11 @@ function renderStats(){
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'+
         '<div style="flex:1;min-width:200px">'+
           '<div style="font-weight:600;margin-bottom:4px">'+(i+1)+'. '+esc(s.question)+' '+tb+'</div>'+
-          '<div style="font-size:.85em;color:var(--muted)">Задан '+s.asked+' раз • верно с 1-й попытки '+s.correct+' • верно в итоге '+s.overallCorrect+' • в среднем '+s.avgAttempts+' попыток</div>'+
+          '<div style="font-size:.85em;color:var(--muted)">Задан '+s.asked+' раз • с 1-й попытки '+s.correctFirst+' • верно в итоге '+s.overallCorrect+' • в среднем '+s.avgAttempts+' попыток</div>'+
         '</div>'+
         '<div style="text-align:right;min-width:80px">'+
           '<div style="font-size:1.4em;font-weight:700;color:'+color+'">'+s.pct+'%</div>'+
-          '<div style="font-size:.75em;color:var(--muted)">верных</div>'+
+          '<div style="font-size:.75em;color:var(--muted)">с 1-й</div>'+
         '</div>'+
       '</div>'+
       '<div class="stat-bar"><div class="stat-bar-fill" style="width:'+s.pct+'%;background:'+color+'"></div></div>'+
@@ -1577,7 +1610,7 @@ function renderStats(){
 
   content.innerHTML=headerHtml+
     '<h3>Статистика по вопросам</h3>'+
-    '<p style="color:var(--muted);font-size:.88em;margin-bottom:14px">Красные/жёлтые вопросы — самые сложные. Возможно, стоит переформулировать.</p>'+
+    '<p style="color:var(--muted);font-size:.88em;margin-bottom:14px">Процент считается по ответам с <b>первой попытки</b>. Красные/жёлтые — самые сложные.</p>'+
     questionsHtml
 }
 
@@ -1677,7 +1710,7 @@ function submitChangePass(){
   }).catch(function(e){msg.textContent='Ошибка: '+e.message})
 }
 
-/* === АККАУНТ (личная + общая статистика, аватар) === */
+/* === АККАУНТ === */
 function setAccountScope(scope){
   accountScope=scope;
   var container=document.getElementById('accountAdminToggle');
@@ -1693,7 +1726,6 @@ function renderAccount(){
   if(!currentUser)return;
   var isAdmin=currentUser.role==='admin';
 
-  // Аватар и имя
   var av=document.getElementById('accountAvatar');
   av.className=getAvatarClass(currentUser.role)+' avatar-lg';
   av.textContent=currentUser.avatarUrl?'':getInitial(currentUser.login);
@@ -1707,7 +1739,6 @@ function renderAccount(){
   if(currentUser.role==='guest')roleText='Гость';
   document.getElementById('accountMeta').textContent=roleText;
 
-  // Переключатель у админа
   var toggle=document.getElementById('accountAdminToggle');
   if(isAdmin){
     toggle.classList.remove('hidden');
@@ -1718,7 +1749,6 @@ function renderAccount(){
     toggle.classList.add('hidden')
   }
 
-  // Какие результаты показывать
   var all=getHistory();
   var results;
   var title;
@@ -1731,30 +1761,33 @@ function renderAccount(){
   }
   document.getElementById('accountStatsTitle').textContent=title;
 
-  // Сводка
   var statBox=document.getElementById('accountStats');
   if(!results.length){
     statBox.innerHTML='<div class="empty-state" style="grid-column:1/-1">Пока нет прохождений</div>'
   } else {
     var runs=results.length;
     var totalQ=results.reduce(function(s,r){return s+r.questions},0);
-    var totalCorrect=results.reduce(function(s,r){return s+(r.correctCount||0)},0);
-    var totalAttempts=results.reduce(function(s,r){return s+r.totalAttempts},0);
+    var totalCorrect=0;
+    results.forEach(function(r){
+      (r.details||[]).forEach(function(d){ if(isCorrectFirstTry(d)) totalCorrect++; });
+    });
+    var totalAttempts=results.reduce(function(s,r){return s+(r.totalAttempts||0)},0);
     var avgPct=totalQ?Math.round(totalCorrect/totalQ*100):0;
     var passed=results.filter(function(r){
-      var pc=typeof r.passCount==='number'?r.passCount:0;
       if(r.checkStatus==='pending')return false;
-      return pc>0?(r.correctCount||0)>=pc:true
+      var pc=typeof r.passCount==='number'?r.passCount:0;
+      var c=0;
+      (r.details||[]).forEach(function(d){ if(isCorrectFirstTry(d)) c++; });
+      return pc>0?c>=pc:true
     }).length;
     statBox.innerHTML=
       '<div class="summary-box"><div class="val">'+runs+'</div><div class="lbl">прохождений</div></div>'+
-      '<div class="summary-box"><div class="val">'+avgPct+'%</div><div class="lbl">средний результат</div></div>'+
+      '<div class="summary-box"><div class="val">'+avgPct+'%</div><div class="lbl">верных с 1-й</div></div>'+
       '<div class="summary-box"><div class="val">'+passed+'</div><div class="lbl">зачтено</div></div>'+
-      '<div class="summary-box"><div class="val">'+totalCorrect+'/'+totalQ+'</div><div class="lbl">верных ответов</div></div>'+
+      '<div class="summary-box"><div class="val">'+totalCorrect+'/'+totalQ+'</div><div class="lbl">с 1-й попытки</div></div>'+
       '<div class="summary-box"><div class="val">'+totalAttempts+'</div><div class="lbl">попыток</div></div>'
   }
 
-  // Список прохождений
   var attemptsBox=document.getElementById('accountAttempts');
   if(!results.length){
     attemptsBox.innerHTML='<div class="empty-state">Нет прохождений</div>';return
@@ -1768,10 +1801,13 @@ function renderAccount(){
       statusBadge='<span class="status-badge status-pending">⏳ На проверке</span>';
       scoreText='<span style="color:var(--warn)">Письменные проверяются</span>'
     } else {
-      var correct=r.correctCount||0,total=r.questions;
-      var pct=total?Math.round(correct/total*100):0;
-      var pass=passCount>0?correct>=passCount:true;
-      scoreText='<span class="result-score">'+correct+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'%)</span>';
+      // пересчёт для отображения
+      var c=0;
+      (r.details||[]).forEach(function(d){ if(isCorrectFirstTry(d)) c++; });
+      var total=r.questions;
+      var pct=total?Math.round(c/total*100):0;
+      var pass=passCount>0?c>=passCount:true;
+      scoreText='<span class="result-score">'+c+'/'+total+'</span> <span style="color:var(--muted)">('+pct+'% с 1-й)</span>';
       statusBadge='<span class="status-badge '+(pass?'status-checked':'status-fail')+'">'+(pass?'✓ Зачтено':'✗ Не зачтено')+'</span>'
     }
     return '<div class="attempt-row">'+
@@ -1826,7 +1862,6 @@ function saveAvatar(){
   db.collection('users').doc(u._id).update({avatarUrl:newVal}).then(function(){
     u.avatarUrl=newVal;
     currentUser.avatarUrl=newVal;
-    // Обновляем аватар в шапке
     var av=document.getElementById('currentAvatar');
     av.textContent='';
     av.style.backgroundImage='url(\''+newVal+'\')';
@@ -1976,6 +2011,7 @@ function setQuestionType(qi,newType){
   else{if(!q.correctText)q.correctText='';if(!q.options)q.options=[]}
   saveTestField({questions:t.questions});renderEditor()
 }
+function updQ(qi,v){var t=CACHE.tests.find(function(x){return
 function updQ(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].question=v;saveTestField({questions:t.questions})}
 function updOpt(qi,oi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options[oi]=v;saveTestField({questions:t.questions})}
 function updCorrectText(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correctText=v;saveTestField({questions:t.questions})}
@@ -1984,7 +2020,6 @@ function setCorrect(qi,oi){var t=CACHE.tests.find(function(x){return x._id===edi
 function addOpt(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options.push('');saveTestField({questions:t.questions});renderEditor()}
 function delOpt(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t||t.questions[qi].options.length<=2)return;t.questions[qi].options.splice(oi,1);if(t.questions[qi].correct===oi)t.questions[qi].correct=0;else if(t.questions[qi].correct>oi)t.questions[qi].correct--;saveTestField({questions:t.questions});renderEditor()}
 function delQ(qi){if(!confirm('Удалить вопрос?'))return;var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions.splice(qi,1);saveTestField({questions:t.questions});renderEditor()}
-
 /* === КАРТИНКИ ВОПРОСОВ === */
 var imgMode=null,imgTargetQ=null,imgPendingData=null;
 
