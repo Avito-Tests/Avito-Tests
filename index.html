@@ -49,109 +49,36 @@ button.small{padding:6px 12px;font-size:.85em}
 .role-admin{background:#fef3c7;color:#92400e}
 .role-user{background:#dbeafe;color:#1e40af}
 .role-guest{background:#dcfce7;color:#166534}
-.auth-container{max-width:420px;margin:40px auto}
-.auth-container h1{text-align:center;margin-bottom:24px}
-.auth-tabs{display:flex;gap:4px;margin-bottom:20px;background:#f1f5f9;padding:4px;border-radius:10px}
-.auth-tab{flex:1;padding:10px;background:none;color:#64748b;border-radius:8px;font-weight:600}
-.auth-tab.active{background:#fff;color:#00AAFF}
-.form-row{margin-bottom:14px}
-.form-row label{display:block;font-size:.85em;color:#475569;margin-bottom:6px;font-weight:600}
-input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:.95em;font-family:inherit}
-.auth-container button[type=submit]{width:100%;padding:12px}
-.auth-hint{font-size:.85em;color:#64748b;text-align:center;margin-top:16px;line-height:1.5}
-#authMsg,#editorMsg{padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:.92em;display:none}
-#authMsg.show,#editorMsg.show{display:block}
-#authMsg.ok,#editorMsg.ok{background:#f0fdf4;color:#166534}
-#authMsg.err,#editorMsg.err{background:#fef2f2;color:#991b1b}
-.history-item{border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.history-head{padding:12px 14px;background:#fafafa;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.history-head:hover{background:#f1f5f9}
-.history-head .h-title{font-weight:600;font-size:.95em}
-.history-head .h-meta{color:#64748b;font-size:.85em;margin-top:4px}
-.history-head .chev{color:#94a3b8;transition:.2s}
-.history-item.open .chev{transform:rotate(90deg)}
-.history-detail{padding:14px;border-top:1px solid #e2e8f0;font-size:.9em}
-.q-review{margin-bottom:14px;padding:12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}
-.q-review-title{font-weight:600;margin-bottom:8px;font-size:.95em}
-.q-review-opts{display:flex;flex-direction:column;gap:5px}
-.q-review-opt{padding:7px 11px;border-radius:6px;font-size:.88em;background:#fff;border:1px solid #e2e8f0}
-.q-review-opt.correct{background:#f0fdf4;border-color:#16a34a}
-.q-review-opt.chosen{background:#dbeafe;border-color:#2563eb;font-weight:600}
-.q-review-opt.chosen.wrong{background:#fee2e2;border-color:#dc2626}
-.attempt-log{margin-top:8px;padding:8px 12px;background:#fff;border-radius:6px;border:1px dashed #cbd5e1;font-size:.85em}
-.attempt-log-row{padding:3px 0;border-bottom:1px solid #f1f5f9}
-.attempt-log-row:last-child{border-bottom:none}
-.q-review-meta{font-size:.82em;color:#64748b;margin-top:8px}
-.explanation{margin-top:10px;padding:12px 14px;background:#eff9ff;border-left:4px solid #00AAFF;border-radius:6px;font-size:.92em;color:#1e293b;line-height:1.5}
-.explanation-title{font-weight:700;color:#0090db;margin-bottom:4px;font-size:.85em;text-transform:uppercase;letter-spacing:.03em}
-.explanation-image{max-width:100%;max-height:250px;border-radius:6px;margin-top:8px;display:block;border:1px solid #bae6fd}
-.editor-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa}
-.editor-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.editor-item-header .num{font-weight:700;color:#64748b;font-size:.9em}
-.field{margin-bottom:12px}
-.field label{display:block;font-size:.82em;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase}
-.opt-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.opt-row input[type=radio]{flex-shrink:0;width:auto}
-.opt-row input[type=text]{flex:1}
-.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
-.summary-box{background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e2e8f0}
-.summary-box .val{font-size:1.7em;font-weight:700;color:#0090db}
-.summary-box .lbl{font-size:.8em;color:#64748b;margin-top:4px}
-.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
-.modal{background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%}
-.modal h3{margin-top:0}
-.img-preview{max-width:100%;max-height:150px;border-radius:6px;margin-top:8px;border:1px solid #e2e8f0}
-.img-buttons{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.guest-banner{background:#dcfce7;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.92em}
-#loading{position:fixed;inset:0;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;z-index:2000;font-size:1.1em;color:#0090db;font-weight:600}
-#loading .spin{width:32px;height:32px;border:3px solid #cbd5e1;border-top-color:#00AAFF;border-radius:50%;animation:sp 1s linear infinite;margin-right:12px}
-@keyframes sp{to{transform:rotate(360deg)}}
-.text-answer-wrap{margin-top:10px}
-.text-answer-input{width:100%;padding:12px 16px;font-size:1em;font-family:inherit;border:2px solid #ddd;border-radius:10px;background:#fff;transition:border-color .15s;resize:vertical;min-height:50px}
-.text-answer-input:focus{outline:none;border-color:#00AAFF;background:#eff9ff}
-.text-answer-input.correct{border-color:#16a34a;background:#f0fdf4}
-.text-answer-input.wrong{border-color:#dc2626;background:#fef2f2}
-.text-answer-input:disabled{opacity:.7;cursor:not-allowed}
-.q-type-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:8px}
-.q-type-choice{background:#dbeafe;color:#1e40af}
-.q-type-text{background:#fef3c7;color:#92400e}
-.q-type-free{background:#ede9fe;color:#5b21b6}
-.free-answer-note{margin-top:8px;padding:10px 14px;background:#f5f3ff;border-left:4px solid #8b5cf6;border-radius:6px;font-size:.88em;color:#5b21b6}
-.editor-type-tabs{display:flex;gap:4px;margin-bottom:10px;background:#f1f5f9;padding:4px;border-radius:8px}
-.editor-type-tab{flex:1;padding:8px 12px;background:none;color:#64748b;border-radius:6px;font-weight:600;font-size:.85em;border:none;cursor:pointer}
-.editor-type-tab.active{background:#fff;color:#00AAFF;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 </style>
 </head>
 <body>
 
-<div id="loading"><div class="spin"></div><span id="loadingText">Загрузка...</span></div>
-
-<div id="authScreen" class="auth-container hidden">
-  <h1>🧪 Тесты Авито</h1>
+<div id="authScreen" class="hidden" style="max-width:420px;margin:40px auto">
+  <h1 style="text-align:center">🧪 Тесты Авито</h1>
   <div class="card">
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-authtab="login" onclick="switchAuthTab('login')">Вход</button>
-      <button class="auth-tab" data-authtab="register" onclick="switchAuthTab('register')">Регистрация</button>
-      <button class="auth-tab" data-authtab="guest" onclick="switchAuthTab('guest')">Гость</button>
+    <div style="display:flex;gap:4px;margin-bottom:20px;background:#f1f5f9;padding:4px;border-radius:10px">
+      <button class="tab active" style="flex:1;padding:10px;border-radius:8px" data-authtab="login" onclick="switchAuthTab('login')">Вход</button>
+      <button class="tab" style="flex:1;padding:10px;border-radius:8px" data-authtab="register" onclick="switchAuthTab('register')">Регистрация</button>
+      <button class="tab" style="flex:1;padding:10px;border-radius:8px" data-authtab="guest" onclick="switchAuthTab('guest')">Гость</button>
     </div>
     <div id="authMsg"></div>
     <form id="loginForm" onsubmit="handleLogin(event)">
-      <div class="form-row"><label>Логин</label><input type="text" id="loginUser" required></div>
-      <div class="form-row"><label>Пароль</label><input type="password" id="loginPass" required></div>
-      <button type="submit">Войти</button>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Логин</label><input type="text" id="loginUser" required style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Пароль</label><input type="password" id="loginPass" required style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+      <button type="submit" style="width:100%;padding:12px">Войти</button>
     </form>
     <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
-      <div class="form-row"><label>Логин</label><input type="text" id="regUser" required minlength="3"></div>
-      <div class="form-row"><label>Пароль</label><input type="password" id="regPass" required minlength="4"></div>
-      <div class="form-row"><label>Ещё раз</label><input type="password" id="regPass2" required></div>
-      <button type="submit">Создать</button>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Логин</label><input type="text" id="regUser" required minlength="3" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Пароль</label><input type="password" id="regPass" required minlength="4" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Ещё раз</label><input type="password" id="regPass2" required style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+      <button type="submit" style="width:100%;padding:12px">Создать</button>
     </form>
     <form id="guestForm" class="hidden" onsubmit="handleGuest(event)">
-      <div class="form-row"><label>Ваше ФИО</label><input type="text" id="guestFio" required placeholder="Иванов Иван Иванович"></div>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Ваше ФИО</label><input type="text" id="guestFio" required placeholder="Иванов Иван Иванович" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
       <p style="font-size:.85em;color:#64748b;margin:0 0 14px">Без регистрации. Результаты сохранятся с вашим ФИО.</p>
-      <button type="submit">Продолжить как гость</button>
+      <button type="submit" style="width:100%;padding:12px">Продолжить как гость</button>
     </form>
-    <p class="auth-hint" id="authHint"></p>
+    <p style="font-size:.85em;color:#64748b;text-align:center;margin-top:16px" id="authHint"></p>
   </div>
 </div>
 
@@ -164,13 +91,12 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
     </div>
   </div>
   <h1>🧪 Тесты Авито</h1>
-  <div id="guestBanner" class="guest-banner hidden"></div>
+  <div id="guestBanner" class="hidden" style="background:#dcfce7;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px"></div>
   <div class="tabs">
     <button class="tab active" data-tab="tests" onclick="switchTab('tests')">📚 Тесты</button>
     <button class="tab admin-only hidden" data-tab="results" onclick="switchTab('results')">📊 Результаты</button>
     <button class="tab admin-only hidden" data-tab="users" onclick="switchTab('users')">👥 Пользователи</button>
   </div>
-
   <div id="tab-tests">
     <div id="testsListView">
       <div class="card">
@@ -211,18 +137,13 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
       </div>
     </div>
   </div>
-
   <div id="tab-results" class="hidden">
     <div class="card">
       <h2>Результаты по тестам</h2>
-      <div class="form-row" style="max-width:400px"><label>Тест:</label>
-        <select id="resultsTestFilter" onchange="renderResults()"></select>
-      </div>
-      <div class="form-row" style="max-width:400px"><label>Пользователь / гость:</label>
-        <select id="resultsUserFilter" onchange="renderResults()"><option value="">Все</option></select>
-      </div>
+      <div style="margin-bottom:14px;max-width:400px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Тест:</label><select id="resultsTestFilter" onchange="renderResults()" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></select></div>
+      <div style="margin-bottom:14px;max-width:400px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Пользователь / гость:</label><select id="resultsUserFilter" onchange="renderResults()" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"><option value="">Все</option></select></div>
       <h3>Сводка</h3>
-      <div class="summary-grid" id="globalSummary"></div>
+      <div id="globalSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px"></div>
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
@@ -232,11 +153,9 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
       <div id="historyList"></div>
     </div>
   </div>
-
   <div id="tab-users" class="hidden">
     <div class="card"><h2>Пользователи</h2><div id="usersList"></div></div>
   </div>
-
   <div id="tab-editor" class="hidden">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
@@ -246,9 +165,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
         </div>
         <button class="secondary small" onclick="backToTests()">← К тестам</button>
       </div>
-      <div class="form-row"><label>Название теста</label>
-        <input type="text" id="editorTestName" oninput="updateTestName(this.value)">
-      </div>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Название теста</label><input type="text" id="editorTestName" oninput="updateTestName(this.value)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
       <div id="editorMsg"></div>
       <div id="editorList"></div>
       <div class="toolbar"><button onclick="addQuestion()">+ Добавить вопрос</button></div>
@@ -256,12 +173,12 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
   </div>
 </div>
 
-<div id="changePassModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeChangePassModal()">
-  <div class="modal">
-    <h3>Сменить пароль администратора</h3>
-    <div class="form-row"><label>Текущий пароль</label><input type="password" id="chOldPass"></div>
-    <div class="form-row"><label>Новый пароль</label><input type="password" id="chNewPass" placeholder="Минимум 4 символа"></div>
-    <div class="form-row"><label>Новый пароль ещё раз</label><input type="password" id="chNewPass2"></div>
+<div id="changePassModal" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px" onclick="if(event.target===this)closeChangePassModal()">
+  <div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%">
+    <h3 style="margin-top:0">Сменить пароль администратора</h3>
+    <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Текущий пароль</label><input type="password" id="chOldPass" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+    <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Новый пароль</label><input type="password" id="chNewPass" placeholder="Минимум 4 символа" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+    <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">Новый пароль ещё раз</label><input type="password" id="chNewPass2" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
     <div id="chPassMsg" style="font-size:.9em;color:#dc2626;margin-bottom:10px"></div>
     <div class="toolbar" style="justify-content:flex-end">
       <button class="secondary" onclick="closeChangePassModal()">Отмена</button>
@@ -270,11 +187,11 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
   </div>
 </div>
 
-<div id="imageModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeImageModal()">
-  <div class="modal">
-    <h3 id="imageModalTitle">Прикрепить картинку</h3>
-    <div class="form-row"><label>URL картинки</label><input type="text" id="imgUrlInput" placeholder="https://..."></div>
-    <div class="form-row"><label>или файл с диска</label><input type="file" id="imgFileInput" accept="image/*" onchange="loadImageFile(event)"></div>
+<div id="imageModal" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px" onclick="if(event.target===this)closeImageModal()">
+  <div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%">
+    <h3 style="margin-top:0" id="imageModalTitle">Прикрепить картинку</h3>
+    <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">URL картинки</label><input type="text" id="imgUrlInput" placeholder="https://..." style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
+    <div style="margin-bottom:14px"><label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85em">или файл с диска</label><input type="file" id="imgFileInput" accept="image/*" onchange="loadImageFile(event)" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></div>
     <div id="imgPreviewWrap"></div>
     <div class="toolbar" style="justify-content:flex-end">
       <button class="secondary" onclick="clearImage()">Убрать картинку</button>
@@ -319,63 +236,65 @@ function esc(s){
 function showMsg(id,type,txt){
   var el=document.getElementById(id);if(!el)return;
   el.className='show '+type;el.textContent=txt;
-  setTimeout(function(){el.className='';el.textContent=''},3500)
+  el.style.display='block';
+  el.style.padding='10px 14px';
+  el.style.borderRadius='8px';
+  el.style.marginBottom='16px';
+  el.style.background=type==='ok'?'#f0fdf4':'#fef2f2';
+  el.style.color=type==='ok'?'#166534':'#991b1b';
+  setTimeout(function(){el.style.display='none';el.textContent=''},3500)
 }
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
-function hideLoading(){
-  var l=document.getElementById('loading');if(l)l.classList.add('hidden')
-}
-function showLoading(txt){
-  var l=document.getElementById('loading');
-  var t=document.getElementById('loadingText');
-  if(l)l.classList.remove('hidden');
-  if(t)t.textContent=txt||'Загрузка...'
-}
 function letterOf(i){return String.fromCharCode(65+i)}
+function showLoading(){
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.body.insertAdjacentHTML('afterbegin','<div id="loadBox" style="padding:60px;text-align:center;font-size:1.2em;color:#0090db">⏳ Загрузка...</div>')
+}
+function hideLoading(){
+  var l=document.getElementById('loadBox');
+  if(l)l.remove()
+}
 
 /* ============================================================
-   ЗАГРУЗКА ИЗ FIRESTORE
+   ЗАГРУЗКА
    ============================================================ */
 function loadAllData(){
-  showLoading('Загрузка пользователей...');
   return db.collection('users').get().then(function(snap){
-    CACHE.users = snap.docs.map(function(d){return Object.assign({_id:d.id}, d.data())});
-    showLoading('Загрузка тестов...');
+    CACHE.users=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
     return db.collection('tests').get()
   }).then(function(snap){
-    CACHE.tests = snap.docs.map(function(d){return Object.assign({_id:d.id}, d.data())});
-    showLoading('Загрузка истории...');
+    CACHE.tests=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
     return db.collection('history').get()
   }).then(function(snap){
-    CACHE.history = snap.docs.map(function(d){return Object.assign({_id:d.id}, d.data())})
+    CACHE.history=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())})
   })
 }
 
 function ensureAdminAndDemos(){
-  var promises = [];
-  if(CACHE.users.length === 0){
-    var adminId = genId();
-    var admin = {login:'admin', passHash:hashPass('admin'), role:'admin', createdAt:new Date().toISOString()};
+  var promises=[];
+  if(CACHE.users.length===0){
+    var adminId=genId();
+    var admin={login:'admin',passHash:hashPass('admin'),role:'admin',createdAt:new Date().toISOString()};
     promises.push(db.collection('users').doc(adminId).set(admin).then(function(){
-      CACHE.users.push(Object.assign({_id:adminId}, admin))
+      CACHE.users.push(Object.assign({_id:adminId},admin))
     }))
   }
-  if(CACHE.tests.length === 0){
-    var d1Id=genId(), d2Id=genId();
+  if(CACHE.tests.length===0){
+    var d1Id=genId(),d2Id=genId();
     var d1={name:'Демо: общие знания',questions:[
       {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
-      {type:'text',question:'Сколько будет 7 × 8? (введите число)',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56.',explanationImage:''},
-      {type:'free',question:'Что вам понравилось в тесте?',options:[],correct:0,correctText:'',image:'',explanation:'Спасибо за ответ!',explanationImage:''}
+      {type:'text',question:'Сколько будет 7 × 8?',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56. Табличное умножение.',explanationImage:''}
     ]};
     var d2={name:'Демо: Авито',questions:[
       {type:'choice',question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,correctText:'',image:'',explanation:'Авито — крупнейшая в России доска объявлений.',explanationImage:''},
-      {type:'text',question:'Основной цвет Авито?',options:[],correct:0,correctText:'синий|голубой',image:'',explanation:'Фирменный цвет — синий.',explanationImage:''}
+      {type:'text',question:'Основной цвет Авито?',options:[],correct:0,correctText:'синий',image:'',explanation:'Фирменный цвет Авито — синий.',explanationImage:''}
     ]};
     promises.push(db.collection('tests').doc(d1Id).set(d1).then(function(){
-      CACHE.tests.push(Object.assign({_id:d1Id}, d1))
+      CACHE.tests.push(Object.assign({_id:d1Id},d1))
     }));
     promises.push(db.collection('tests').doc(d2Id).set(d2).then(function(){
-      CACHE.tests.push(Object.assign({_id:d2Id}, d2))
+      CACHE.tests.push(Object.assign({_id:d2Id},d2))
     }))
   }
   return Promise.all(promises)
@@ -389,26 +308,21 @@ function getHistory(){return CACHE.history.slice()}
    СЕССИЯ
    ============================================================ */
 var SESSION_KEY='t_session_v2';
-function getSession(){
-  try{return JSON.parse(localStorage.getItem(SESSION_KEY))}catch(e){return null}
-}
-function setSession(s){
-  s?localStorage.setItem(SESSION_KEY,JSON.stringify(s)):localStorage.removeItem(SESSION_KEY)
-}
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY))}catch(e){return null}}
+function setSession(s){s?localStorage.setItem(SESSION_KEY,JSON.stringify(s)):localStorage.removeItem(SESSION_KEY)}
 
 /* ============================================================
    ИНИЦИАЛИЗАЦИЯ
    ============================================================ */
 function initApp(){
+  showLoading();
   loadAllData().then(function(){
     return ensureAdminAndDemos()
   }).then(function(){
     hideLoading();
     var s=getSession();
     if(s){
-      if(s.type==='guest'){
-        enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return
-      }
+      if(s.type==='guest'){enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return}
       var u=CACHE.users.find(function(x){return x.login===s.login});
       if(u){enterApp(u);return}
       setSession(null)
@@ -419,7 +333,7 @@ function initApp(){
     document.body.innerHTML='<div style="padding:40px;text-align:center;color:#dc2626;font-family:system-ui">'+
       '<h2>Ошибка подключения к Firebase</h2>'+
       '<p style="background:#fef2f2;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
-      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте: Firestore создан, правила опубликованы (allow read, write: if true).</p></div>';
+      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте что Firestore создан и правила опубликованы:<br><code>allow read, write: if true;</code></p></div>';
   })
 }
 
@@ -427,7 +341,7 @@ function showAuthScreen(){
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('app').classList.add('hidden');
   var hint=document.getElementById('authHint');
-  if(CACHE.users.length===1 && CACHE.users[0].login==='admin'){
+  if(CACHE.users.length===1&&CACHE.users[0].login==='admin'){
     hint.innerHTML='👋 Войдите как <b>admin / admin</b> или пройдите тест как гость'
   } else {
     hint.textContent='Войдите, создайте аккаунт или пройдите тест как гость'
@@ -435,13 +349,14 @@ function showAuthScreen(){
 }
 
 function switchAuthTab(name){
-  document.querySelectorAll('.auth-tab').forEach(function(t){
-    t.classList.toggle('active',t.dataset.authtab===name)
+  document.querySelectorAll('.tab[data-authtab]').forEach(function(t){
+    t.style.background=t.dataset.authtab===name?'#fff':'transparent';
+    t.style.color=t.dataset.authtab===name?'#00AAFF':'#64748b'
   });
   document.getElementById('loginForm').classList.toggle('hidden',name!=='login');
   document.getElementById('registerForm').classList.toggle('hidden',name!=='register');
   document.getElementById('guestForm').classList.toggle('hidden',name!=='guest');
-  var m=document.getElementById('authMsg');m.className='';m.textContent=''
+  var m=document.getElementById('authMsg');m.style.display='none';m.textContent=''
 }
 
 function handleLogin(e){
@@ -470,12 +385,12 @@ function handleRegister(e){
   var id=genId();
   var nu={login:login,passHash:hashPass(pass),role:'user',createdAt:new Date().toISOString()};
   db.collection('users').doc(id).set(nu).then(function(){
-    CACHE.users.push(Object.assign({_id:id}, nu));
+    CACHE.users.push(Object.assign({_id:id},nu));
     setSession({type:'user',login:nu.login});
     document.getElementById('regUser').value='';
     document.getElementById('regPass').value='';
     document.getElementById('regPass2').value='';
-    enterApp(Object.assign({_id:id}, nu))
+    enterApp(Object.assign({_id:id},nu))
   }).catch(function(err){showMsg('authMsg','err','Ошибка: '+err.message)})
 }
 
@@ -502,17 +417,14 @@ function enterApp(u){
   if(u.role==='admin'){b.className='role-badge role-admin';b.textContent='Админ'}
   else if(u.role==='guest'){b.className='role-badge role-guest';b.textContent='Гость'}
   else{b.className='role-badge role-user';b.textContent='Пользователь'}
-
   document.getElementById('changePassBtn').classList.toggle('hidden',u.role!=='admin');
-
   var gb=document.getElementById('guestBanner');
   if(u.role==='guest'){
     gb.classList.remove('hidden');
-    gb.innerHTML='👋 Вы вошли как гость: <b>'+esc(u.fio)+'</b>. Результаты сохранятся с вашим ФИО.'
+    gb.innerHTML='👋 Вы вошли как гость: <b>'+esc(u.fio)+'</b>'
   } else {
     gb.classList.add('hidden')
   }
-
   document.querySelectorAll('.admin-only').forEach(function(el){
     el.classList.toggle('hidden',u.role!=='admin')
   });
@@ -521,8 +433,8 @@ function enterApp(u){
 
 function switchTab(name){
   var adminOnly=['results','users','editor'];
-  if(adminOnly.indexOf(name)!==-1 && (!currentUser||currentUser.role!=='admin'))name='tests';
-  document.querySelectorAll('.tab').forEach(function(t){
+  if(adminOnly.indexOf(name)!==-1&&(!currentUser||currentUser.role!=='admin'))name='tests';
+  document.querySelectorAll('.tab[data-tab]').forEach(function(t){
     t.classList.toggle('active',t.dataset.tab===name)
   });
   ['tests','results','users','editor'].forEach(function(n){
@@ -534,7 +446,6 @@ function switchTab(name){
   if(name==='users')renderUsers();
   if(name==='editor')renderEditor()
 }
-
 /* ============================================================
    СПИСОК ТЕСТОВ
    ============================================================ */
@@ -573,7 +484,7 @@ function openTestStart(id){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
   document.getElementById('startTitle').textContent=t.name;
-  document.getElementById('startInfo').textContent='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены. После прохождения увидите правильные ответы и пояснения.'
+  document.getElementById('startInfo').textContent='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены.'
 }
 
 /* ============================================================
@@ -589,7 +500,7 @@ function startTest(){
   if(!currentTest)return;
   cur=0;
   qStats=currentTest.questions.map(function(){
-    return {attempts:0, solved:false, choices:[], firstChoice:null}
+    return {attempts:0,solved:false,choices:[],firstChoice:null}
   });
   currentSel=currentTest.questions.map(function(){return null});
   started=Date.now();
@@ -606,14 +517,11 @@ function renderQ(){
   var qtype=q.type||'choice';
 
   document.getElementById('progress').textContent=
-    'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts+
-    (qStats[cur].solved?' • ✅ решён':'');
+    'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts;
 
-  var typeBadge;
-  if(qtype==='text') typeBadge=' <span class="q-type-badge q-type-text">✍️ письменный</span>';
-  else if(qtype==='free') typeBadge=' <span class="q-type-badge q-type-free">📝 свободный</span>';
-  else typeBadge=' <span class="q-type-badge q-type-choice">📋 выбор</span>';
-
+  var typeBadge=qtype==='text'
+    ? ' <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;text-transform:uppercase;background:#fef3c7;color:#92400e;margin-left:8px">✍️ письменный</span>'
+    : ' <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;text-transform:uppercase;background:#dbeafe;color:#1e40af;margin-left:8px">📋 выбор</span>';
   document.getElementById('questionText').innerHTML=esc(q.question||'(без текста)')+typeBadge;
 
   var iw=document.getElementById('questionImageWrap');
@@ -651,58 +559,45 @@ function renderQ(){
     });
   } else {
     var wrap=document.createElement('div');
-    wrap.className='text-answer-wrap';
-
-    if(qtype==='free'){
-      var note=document.createElement('div');
-      note.className='free-answer-note';
-      note.innerHTML='📝 <b>Свободный ответ:</b> принимается любой введённый текст.';
-      wrap.appendChild(note);
-    }
+    wrap.style.marginTop='10px';
+    var note=document.createElement('div');
+    note.style.cssText='margin-bottom:10px;padding:10px 14px;background:#f5f3ff;border-left:4px solid #8b5cf6;border-radius:6px;font-size:.88em;color:#5b21b6';
+    note.innerHTML='✍️ <b>Письменный ответ:</b> принимается любой текст. Правильный ответ увидите после завершения теста.';
+    wrap.appendChild(note);
 
     var inp=document.createElement('textarea');
-    inp.className='text-answer-input';
     inp.id='textAnswerInput';
-    inp.placeholder=qtype==='free'?'Введите ваш ответ (принимается любой)...':'Введите ваш ответ...';
+    inp.placeholder='Введите ваш ответ...';
     inp.value=(sel||'');
-
+    inp.style.cssText='width:100%;padding:12px 16px;font-size:1em;font-family:inherit;border:2px solid #ddd;border-radius:10px;background:#fff;min-height:50px;resize:vertical';
     if(solvedQ){
       inp.disabled=true;
-      inp.classList.add('correct');
+      inp.style.borderColor='#16a34a';
+      inp.style.background='#f0fdf4';
       wrap.appendChild(inp);
-      if(qtype==='text'){
-        var correctBox=document.createElement('div');
-        correctBox.style.marginTop='10px';
-        correctBox.style.padding='10px 14px';
-        correctBox.style.background='#f0fdf4';
-        correctBox.style.border='1px solid #16a34a';
-        correctBox.style.borderRadius='8px';
-        correctBox.style.fontSize='.92em';
-        correctBox.innerHTML='<b style="color:#166534">✓ Правильный ответ:</b> '+esc(q.correctText||'');
-        wrap.appendChild(correctBox);
+      if(q.correctText){
+        var cb=document.createElement('div');
+        cb.style.cssText='margin-top:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;font-size:.92em';
+        cb.innerHTML='<b style="color:#166534">✓ Правильный ответ:</b> '+esc(q.correctText);
+        wrap.appendChild(cb)
       }
     } else {
-      inp.oninput=function(){
-        currentSel[cur]=inp.value;
-      };
-      wrap.appendChild(inp);
+      inp.oninput=function(){currentSel[cur]=inp.value};
+      wrap.appendChild(inp)
     }
-    opts.appendChild(wrap);
+    opts.appendChild(wrap)
   }
 
-  var prevBtn=document.getElementById('prevBtn');
-  prevBtn.classList.toggle('hidden',cur===0);
-
-  var cb=document.getElementById('checkBtn');
+  document.getElementById('prevBtn').classList.toggle('hidden',cur===0);
+  var cb2=document.getElementById('checkBtn');
   var nb=document.getElementById('nextBtn');
-
   if(solvedQ){
-    cb.classList.add('hidden');
+    cb2.classList.add('hidden');
     nb.classList.remove('hidden');
     nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   } else {
-    cb.classList.remove('hidden');
-    cb.disabled=false;
+    cb2.classList.remove('hidden');
+    cb2.disabled=false;
     nb.classList.add('hidden')
   }
 }
@@ -714,15 +609,6 @@ function pickOption(i){
   document.querySelectorAll('.option').forEach(function(el){
     el.classList.toggle('selected',parseInt(el.dataset.i,10)===i)
   })
-}
-
-function checkTextAnswer(userText,correctText){
-  if(!userText||!correctText)return false;
-  var u=String(userText).trim().toLowerCase().replace(/\s+/g,' ');
-  var c=String(correctText).trim().toLowerCase().replace(/\s+/g,' ');
-  if(u===c)return true;
-  var variants=c.split('|').map(function(v){return v.trim()});
-  return variants.indexOf(u)!==-1
 }
 
 function checkAnswer(){
@@ -745,7 +631,7 @@ function checkAnswer(){
     if(ok){
       document.querySelectorAll('.option').forEach(function(el,i){
         el.classList.remove('selected','wrong');
-        if(i===q.correct)el.classList.add('correct');
+        if(i===q.correct)el.classList.add('correct')
       });
       qStats[cur].solved=true;
       var rb=document.getElementById('resultBox');
@@ -758,7 +644,7 @@ function checkAnswer(){
     } else {
       document.querySelectorAll('.option').forEach(function(el,i){
         el.classList.remove('selected','correct');
-        if(i===chosen)el.classList.add('wrong');
+        if(i===chosen)el.classList.add('wrong')
       });
       var rb2=document.getElementById('resultBox');
       rb2.className='result fail';
@@ -768,14 +654,13 @@ function checkAnswer(){
         document.querySelectorAll('.option').forEach(function(el,i){
           el.classList.remove('correct','wrong');
           if(i===currentSel[cur])el.classList.add('selected');
-          el.onclick=(function(idx){
-            return function(){pickOption(idx)}
-          })(i);
+          el.onclick=(function(idx){return function(){pickOption(idx)}})(i)
         });
         document.getElementById('checkBtn').disabled=false
       },1200)
     }
   } else {
+    // Письменный — ЛЮБОЙ ответ принимается
     var inp=document.getElementById('textAnswerInput');
     var userText=inp?inp.value.trim():'';
     if(!userText){
@@ -787,39 +672,23 @@ function checkAnswer(){
     qStats[cur].choices.push(userText);
     if(qStats[cur].firstChoice===null)qStats[cur].firstChoice=userText;
 
-    var okText=(qtype==='free')?true:checkTextAnswer(userText,q.correctText);
+    inp.disabled=true;
+    inp.style.borderColor='#16a34a';
+    inp.style.background='#f0fdf4';
+    qStats[cur].solved=true;
 
-    if(okText){
-      inp.classList.remove('wrong');
-      inp.classList.add('correct');
-      inp.disabled=true;
-      qStats[cur].solved=true;
-      var rb3=document.getElementById('resultBox');
-      rb3.className='result ok';
-      rb3.textContent=(qtype==='free')?'✅ Ответ принят!':'✅ Верно! Попыток на вопрос: '+qStats[cur].attempts;
-      document.getElementById('checkBtn').classList.add('hidden');
-      var nb2=document.getElementById('nextBtn');
-      nb2.classList.remove('hidden');
-      nb2.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
-    } else {
-      inp.classList.remove('correct');
-      inp.classList.add('wrong');
-      var rb4=document.getElementById('resultBox');
-      rb4.className='result fail';
-      rb4.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой ответ.';
-      setTimeout(function(){
-        chk=false;
-        inp.classList.remove('wrong');
-        inp.disabled=false;
-        inp.focus();
-        document.getElementById('checkBtn').disabled=false
-      },1200)
-    }
+    var rb3=document.getElementById('resultBox');
+    rb3.className='result ok';
+    rb3.innerHTML='✅ <b>Ответ принят!</b> Правильный ответ и пояснение увидите после завершения теста.';
+
+    document.getElementById('checkBtn').classList.add('hidden');
+    var nb2=document.getElementById('nextBtn');
+    nb2.classList.remove('hidden');
+    nb2.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   }
 
   document.getElementById('progress').textContent=
-    'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts+
-    (qStats[cur].solved?' • ✅ решён':'')
+    'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts
 }
 
 function nextQuestion(){
@@ -852,34 +721,23 @@ function finishTest(){
 
     if(qtype==='choice'){
       var optsHtml=(q.options||[]).map(function(opt,oi){
-        var cls='q-review-opt';
-        if(oi===q.correct)cls+=' correct';
-        if(st.choices.indexOf(oi)!==-1 && oi!==q.correct)cls+=' chosen wrong';
-        else if(st.choices.indexOf(oi)!==-1)cls+=' chosen';
+        var style='padding:7px 11px;border-radius:6px;font-size:.88em;background:#fff;border:1px solid #e2e8f0;margin-bottom:5px';
+        if(oi===q.correct)style+=';background:#f0fdf4;border-color:#16a34a';
+        if(st.choices.indexOf(oi)!==-1&&oi!==q.correct)style+=';background:#fee2e2;border-color:#dc2626';
+        else if(st.choices.indexOf(oi)!==-1)style+=';background:#dbeafe;border-color:#2563eb;font-weight:600';
         var marks=[];
         if(oi===q.correct)marks.push('✓ правильный');
         if(st.choices.indexOf(oi)!==-1)marks.push('👈 вы выбирали');
-        return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
+        return '<div style="'+style+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
       }).join('');
-      contentHtml='<div class="q-review-opts">'+optsHtml+'</div>';
-    } else if(qtype==='free'){
-      var attemptStr=st.choices.map(function(c,idx){
-        return '<div class="attempt-log-row">Ответ '+(idx+1)+': <code style="background:#fff;padding:2px 6px;border-radius:4px">'+esc(c)+'</code> <span style="color:#16a34a">✓</span></div>'
-      }).join('');
-      contentHtml='<div class="q-review-opts">'+
-        '<div class="q-review-opt correct"><b>✓ Свободный ответ — любой принимается</b></div>'+
-        (attemptStr?'<div class="attempt-log" style="margin-top:8px"><b>Ваш ответ:</b>'+attemptStr+'</div>':'')+
-      '</div>';
+      contentHtml='<div>'+optsHtml+'</div>';
     } else {
-      var attemptStr2=st.choices.map(function(c,idx){
-        var okOne=checkTextAnswer(c,q.correctText);
-        return '<div class="attempt-log-row">Попытка '+(idx+1)+': <code style="background:#fff;padding:1px 6px;border-radius:4px">'+esc(c)+'</code> '+
-          (okOne?'<span style="color:#16a34a">✓</span>':'<span style="color:#dc2626">✕</span>')+'</div>'
-      }).join('');
-      contentHtml='<div class="q-review-opts">'+
-        '<div class="q-review-opt correct"><b>✓ Правильный ответ:</b> '+esc(q.correctText||'')+'</div>'+
-        (attemptStr2?'<div class="attempt-log" style="margin-top:8px"><b>Ваши ответы:</b>'+attemptStr2+'</div>':'')+
-      '</div>';
+      var userAnswer=st.choices.length?st.choices[st.choices.length-1]:'';
+      contentHtml=
+        '<div>'+
+          '<div style="padding:7px 11px;border-radius:6px;font-size:.88em;background:#dbeafe;border:1px solid #2563eb;font-weight:600;margin-bottom:5px"><b>Ваш ответ:</b> '+esc(userAnswer||'(не введён)')+'</div>'+
+          '<div style="padding:7px 11px;border-radius:6px;font-size:.88em;background:#f0fdf4;border:1px solid #16a34a"><b>✓ Правильный ответ:</b> '+esc(q.correctText||'(не задан)')+'</div>'+
+        '</div>';
     }
 
     var imgHtml=q.image&&q.image.trim()
@@ -888,26 +746,25 @@ function finishTest(){
 
     var hasExpl=(q.explanation&&q.explanation.trim())||(q.explanationImage&&q.explanationImage.trim());
     var explHtml=hasExpl
-      ? '<div class="explanation">'+
-          '<div class="explanation-title">💡 Пояснение</div>'+
+      ? '<div style="margin-top:10px;padding:12px 14px;background:#eff9ff;border-left:4px solid #00AAFF;border-radius:6px;font-size:.92em;color:#1e293b;line-height:1.5">'+
+          '<div style="font-weight:700;color:#0090db;margin-bottom:4px;font-size:.85em;text-transform:uppercase">💡 Почему так</div>'+
           (q.explanation?'<div>'+esc(q.explanation)+'</div>':'')+
-          (q.explanationImage?'<img class="explanation-image" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
+          (q.explanationImage?'<img src="'+esc(q.explanationImage)+'" style="max-width:100%;max-height:250px;border-radius:6px;margin-top:8px;display:block" onerror="this.style.display=\'none\'">':'')+
         '</div>'
       : '';
 
-    var typeBadge;
-    if(qtype==='text') typeBadge=' <span class="q-type-badge q-type-text">✍️</span>';
-    else if(qtype==='free') typeBadge=' <span class="q-type-badge q-type-free">📝</span>';
-    else typeBadge=' <span class="q-type-badge q-type-choice">📋</span>';
+    var typeBadge=qtype==='text'
+      ? ' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:#fef3c7;color:#92400e">✍️</span>'
+      : ' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:#dbeafe;color:#1e40af">📋</span>';
 
-    return '<div class="q-review">'+
-      '<div class="q-review-title">'+(i+1)+'. '+esc(q.question||'(без текста)')+typeBadge+
+    return '<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">'+
+      '<div style="font-weight:600;margin-bottom:8px;font-size:.95em">'+(i+1)+'. '+esc(q.question||'(без текста)')+typeBadge+
         (st.solved?' <span style="color:#16a34a">✅</span>':' <span style="color:#dc2626">❌</span>')+
       '</div>'+
       imgHtml+
       contentHtml+
       explHtml+
-      '<div class="q-review-meta">Попыток: '+st.attempts+'</div>'+
+      '<div style="font-size:.82em;color:#64748b;margin-top:8px">Попыток: '+st.attempts+'</div>'+
     '</div>'
   }).join('');
 
@@ -916,10 +773,7 @@ function finishTest(){
   var details=currentTest.questions.map(function(q,i){
     var choices=qStats[i].choices.slice();
     var attemptLog=choices.map(function(chosen,idx){
-      var isCorrect;
-      if(q.type==='free') isCorrect=true;
-      else if(q.type==='text') isCorrect=checkTextAnswer(chosen,q.correctText);
-      else isCorrect=(chosen===q.correct);
+      var isCorrect=(q.type==='text')?true:(chosen===q.correct);
       return {attempt:idx+1,chosen:chosen,isCorrect:isCorrect}
     });
     return {
@@ -956,14 +810,14 @@ function finishTest(){
 
   var id=genId();
   db.collection('history').doc(id).set(rec).then(function(){
-    CACHE.history.unshift(Object.assign({_id:id}, rec))
+    CACHE.history.unshift(Object.assign({_id:id},rec))
   }).catch(function(e){
-    console.error('Не удалось сохранить результат:',e);
+    console.error('Не удалось сохранить:',e);
     alert('Результат не сохранён: '+e.message)
   })
 }
 /* ============================================================
-   СМЕНА ПАРОЛЯ (только admin)
+   СМЕНА ПАРОЛЯ
    ============================================================ */
 function openChangePassModal(){
   if(!currentUser||currentUser.role!=='admin'){alert('Только для администратора');return}
@@ -973,15 +827,12 @@ function openChangePassModal(){
   document.getElementById('chPassMsg').textContent='';
   document.getElementById('changePassModal').classList.remove('hidden')
 }
-function closeChangePassModal(){
-  document.getElementById('changePassModal').classList.add('hidden')
-}
+function closeChangePassModal(){document.getElementById('changePassModal').classList.add('hidden')}
 function submitChangePass(){
   var oldP=document.getElementById('chOldPass').value;
   var newP=document.getElementById('chNewPass').value;
   var newP2=document.getElementById('chNewPass2').value;
-  var msg=document.getElementById('chPassMsg');
-  msg.textContent='';
+  var msg=document.getElementById('chPassMsg');msg.textContent='';
   if(currentUser.role!=='admin'){msg.textContent='Только для администратора';return}
   var u=CACHE.users.find(function(x){return x.login===currentUser.login});
   if(!u){msg.textContent='Пользователь не найден';return}
@@ -989,34 +840,28 @@ function submitChangePass(){
   if(newP.length<4){msg.textContent='Новый пароль — минимум 4 символа';return}
   if(newP!==newP2){msg.textContent='Новые пароли не совпадают';return}
   db.collection('users').doc(u._id).update({passHash:hashPass(newP)}).then(function(){
-    u.passHash=hashPass(newP);
-    closeChangePassModal();
-    alert('Пароль администратора изменён')
+    u.passHash=hashPass(newP);closeChangePassModal();alert('Пароль изменён')
   }).catch(function(e){msg.textContent='Ошибка: '+e.message})
 }
 
 /* ============================================================
-   РЕЗУЛЬТАТЫ (admin)
+   РЕЗУЛЬТАТЫ
    ============================================================ */
 function renderResults(){
-  var tests=getTests();
-  var h=getHistory();
+  var tests=getTests();var h=getHistory();
   var sel1=document.getElementById('resultsTestFilter');
   var cur1=sel1.value;
-  sel1.innerHTML='<option value="">— выберите тест —</option>'+
-    tests.map(function(t){
-      return '<option value="'+t._id+'"'+(t._id===cur1?' selected':'')+'>'+esc(t.name)+'</option>'
-    }).join('');
+  sel1.innerHTML='<option value="">— выберите тест —</option>'+tests.map(function(t){
+    return '<option value="'+t._id+'"'+(t._id===cur1?' selected':'')+'>'+esc(t.name)+'</option>'
+  }).join('');
   if(!cur1&&tests.length){cur1=tests[0]._id;sel1.value=cur1}
 
   var sel2=document.getElementById('resultsUserFilter');
   var cur2=sel2.value;
-  var users=[];
-  h.forEach(function(r){if(r.user&&users.indexOf(r.user)===-1)users.push(r.user)});
-  sel2.innerHTML='<option value="">Все</option>'+
-    users.map(function(u){
-      return '<option value="'+esc(u)+'"'+(u===cur2?' selected':'')+'>'+esc(u)+'</option>'
-    }).join('');
+  var users=[];h.forEach(function(r){if(r.user&&users.indexOf(r.user)===-1)users.push(r.user)});
+  sel2.innerHTML='<option value="">Все</option>'+users.map(function(u){
+    return '<option value="'+esc(u)+'"'+(u===cur2?' selected':'')+'>'+esc(u)+'</option>'
+  }).join('');
 
   var filtered=h.filter(function(r){
     if(cur1&&r.testId!==cur1)return false;
@@ -1026,112 +871,73 @@ function renderResults(){
 
   var sum=document.getElementById('globalSummary');
   if(!filtered.length){
-    sum.innerHTML='<div class="empty-state" style="grid-column:1/-1">Нет прохождений по этому фильтру</div>'
+    sum.innerHTML='<div class="empty-state" style="grid-column:1/-1">Нет прохождений по фильтру</div>'
   } else {
     var totRuns=filtered.length;
-    var totQ=filtered.reduce(function(s,r){return s+r.questions},0);
     var totA=filtered.reduce(function(s,r){return s+r.totalAttempts},0);
     var totF=filtered.reduce(function(s,r){return s+r.solvedFirstTry},0);
     sum.innerHTML=
-      '<div class="summary-box"><div class="val">'+totRuns+'</div><div class="lbl">прохождений</div></div>'+
-      '<div class="summary-box"><div class="val">'+totQ+'</div><div class="lbl">вопросов</div></div>'+
-      '<div class="summary-box"><div class="val">'+totA+'</div><div class="lbl">попыток</div></div>'+
-      '<div class="summary-box"><div class="val">'+totF+'</div><div class="lbl">с 1-й</div></div>'
+      '<div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e2e8f0"><div style="font-size:1.7em;font-weight:700;color:#0090db">'+totRuns+'</div><div style="font-size:.8em;color:#64748b">прохождений</div></div>'+
+      '<div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e2e8f0"><div style="font-size:1.7em;font-weight:700;color:#0090db">'+totA+'</div><div style="font-size:.8em;color:#64748b">попыток</div></div>'+
+      '<div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:1px solid #e2e8f0"><div style="font-size:1.7em;font-weight:700;color:#0090db">'+totF+'</div><div style="font-size:.8em;color:#64748b">с 1-й</div></div>'
   }
 
   var list=document.getElementById('historyList');
-  if(!filtered.length){
-    list.innerHTML='<div class="empty-state">Пусто</div>';return
-  }
+  if(!filtered.length){list.innerHTML='<div class="empty-state">Пусто</div>';return}
   list.innerHTML=filtered.map(function(r,idx){
     var who=r.userRole==='guest'?'👤 '+esc(r.fio)+' (гость)':'👤 '+esc(r.user);
-    return '<div class="history-item" data-idx="'+idx+'">'+
-      '<div class="history-head" onclick="toggleHistoryDetail('+idx+')">'+
-        '<div>'+
-          '<div class="h-title">'+esc(r.date)+' — <span style="color:#0090db">'+esc(r.testName)+'</span></div>'+
-          '<div class="h-meta">'+who+' • '+r.questions+' вопр. • '+r.totalAttempts+' попыток • '+r.solvedFirstTry+' с 1-й • '+r.elapsed+' сек</div>'+
-        '</div>'+
-        '<span class="chev">▸</span>'+
+    return '<div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">'+
+      '<div style="padding:12px 14px;background:#fafafa;cursor:pointer" onclick="toggleHistoryDetail('+idx+')">'+
+        '<div style="font-weight:600;font-size:.95em">'+esc(r.date)+' — <span style="color:#0090db">'+esc(r.testName)+'</span></div>'+
+        '<div style="color:#64748b;font-size:.85em;margin-top:4px">'+who+' • '+r.questions+' вопр. • '+r.totalAttempts+' попыток • '+r.solvedFirstTry+' с 1-й</div>'+
       '</div>'+
-      '<div class="history-detail hidden">'+buildHistoryDetailHTML(r)+'</div>'+
+      '<div id="hdet_'+idx+'" class="hidden" style="padding:14px;border-top:1px solid #e2e8f0;font-size:.9em">'+buildHistoryDetailHTML(r)+'</div>'+
     '</div>'
   }).join('')
 }
 
 function toggleHistoryDetail(idx){
-  var item=document.querySelector('.history-item[data-idx="'+idx+'"]');
-  if(!item)return;
-  item.classList.toggle('open');
-  var d=item.querySelector('.history-detail');
-  d.classList.toggle('hidden')
+  var d=document.getElementById('hdet_'+idx);
+  if(d)d.classList.toggle('hidden')
 }
 
 function buildHistoryDetailHTML(r){
   var details=r.details;
-  if(!details||!details.length){
-    return '<p style="color:#94a3b8">Детали недоступны (запись старая)</p>'
-  }
+  if(!details||!details.length)return '<p style="color:#94a3b8">Детали недоступны</p>';
   return details.map(function(d,i){
     var qtype=d.type||'choice';
     var contentHtml='';
-
     if(qtype==='choice'){
       var optsHtml=(d.options||[]).map(function(opt,oi){
-        var cls='q-review-opt';
-        if(oi===d.correct)cls+=' correct';
-        if(d.choices&&d.choices.indexOf(oi)!==-1 && oi!==d.correct)cls+=' wrong';
-        if(d.choices&&d.choices.indexOf(oi)!==-1)cls+=' chosen';
+        var style='padding:7px 11px;border-radius:6px;font-size:.88em;background:#fff;border:1px solid #e2e8f0;margin-bottom:5px';
+        if(oi===d.correct)style+=';background:#f0fdf4;border-color:#16a34a';
+        if(d.choices&&d.choices.indexOf(oi)!==-1&&oi!==d.correct)style+=';background:#fee2e2;border-color:#dc2626';
+        else if(d.choices&&d.choices.indexOf(oi)!==-1)style+=';background:#dbeafe;border-color:#2563eb;font-weight:600';
         var marks=[];
         if(d.choices&&d.choices.indexOf(oi)!==-1)marks.push('👈 выбирал');
         if(oi===d.correct)marks.push('✓ правильный');
-        return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
+        return '<div style="'+style+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
       }).join('');
-      contentHtml='<div class="q-review-opts">'+optsHtml+'</div>';
-    } else if(qtype==='free'){
-      var attemptStr=(d.attemptLog||[]).map(function(a){
-        var txt=d.choices[a.attempt-1];
-        return '<div class="attempt-log-row">Ответ '+a.attempt+': <code style="background:#fff;padding:2px 6px;border-radius:4px">'+esc(txt)+'</code> <span style="color:#16a34a">✓</span></div>'
-      }).join('');
-      contentHtml='<div class="q-review-opts">'+
-        '<div class="q-review-opt correct"><b>📝 Свободный ответ — любой принимается</b></div>'+
-        (attemptStr?'<div class="attempt-log" style="margin-top:8px"><b>Ответ пользователя:</b>'+attemptStr+'</div>':'')+
-      '</div>';
+      contentHtml='<div>'+optsHtml+'</div>'
     } else {
-      var attemptStr2=(d.attemptLog||[]).map(function(a){
-        var txt=d.choices[a.attempt-1];
-        return '<div class="attempt-log-row">Попытка '+a.attempt+': <code style="background:#fff;padding:1px 6px;border-radius:4px">'+esc(txt)+'</code> '+
-          (a.isCorrect?'<span style="color:#16a34a">✓</span>':'<span style="color:#dc2626">✕</span>')+'</div>'
-      }).join('');
-      contentHtml='<div class="q-review-opts">'+
-        '<div class="q-review-opt correct"><b>✓ Правильный ответ:</b> '+esc(d.correctText||'')+'</div>'+
-        (attemptStr2?'<div class="attempt-log" style="margin-top:8px"><b>Все попытки:</b>'+attemptStr2+'</div>':'')+
-      '</div>';
+      var userAnswer=d.choices&&d.choices.length?d.choices[d.choices.length-1]:'';
+      contentHtml='<div>'+
+        '<div style="padding:7px 11px;border-radius:6px;font-size:.88em;background:#dbeafe;border:1px solid #2563eb;font-weight:600;margin-bottom:5px"><b>Ответ пользователя:</b> '+esc(userAnswer||'(не введён)')+'</div>'+
+        '<div style="padding:7px 11px;border-radius:6px;font-size:.88em;background:#f0fdf4;border:1px solid #16a34a"><b>✓ Правильный ответ:</b> '+esc(d.correctText||'(не задан)')+'</div>'+
+      '</div>'
     }
-
-    var imgHtml=d.image&&d.image.trim()
-      ? '<img class="q-image" src="'+esc(d.image)+'" style="max-height:180px;margin-bottom:8px" onerror="this.style.display=\'none\'">'
-      : '';
-
+    var imgHtml=d.image&&d.image.trim()?'<img src="'+esc(d.image)+'" style="max-width:100%;max-height:180px;border-radius:6px;margin-bottom:8px" onerror="this.style.display=\'none\'">':'';
     var hasExpl=(d.explanation&&d.explanation.trim())||(d.explanationImage&&d.explanationImage.trim());
-    var explHtml=hasExpl
-      ? '<div class="explanation">'+
-          '<div class="explanation-title">💡 Пояснение</div>'+
-          (d.explanation?'<div>'+esc(d.explanation)+'</div>':'')+
-          (d.explanationImage?'<img class="explanation-image" src="'+esc(d.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
-        '</div>'
-      : '';
-
-    var typeBadge;
-    if(qtype==='text') typeBadge=' <span class="q-type-badge q-type-text">✍️</span>';
-    else if(qtype==='free') typeBadge=' <span class="q-type-badge q-type-free">📝</span>';
-    else typeBadge=' <span class="q-type-badge q-type-choice">📋</span>';
-
-    return '<div class="q-review">'+
-      '<div class="q-review-title">'+(i+1)+'. '+esc(d.question||'(без текста)')+typeBadge+'</div>'+
-      imgHtml+
-      contentHtml+
-      explHtml+
-      '<div class="q-review-meta">Попыток: '+d.attempts+' • '+(d.solved?'✅ решён':'❌ не решён')+'</div>'+
+    var explHtml=hasExpl?'<div style="margin-top:10px;padding:12px 14px;background:#eff9ff;border-left:4px solid #00AAFF;border-radius:6px;font-size:.92em">'+
+      '<div style="font-weight:700;color:#0090db;margin-bottom:4px;font-size:.85em;text-transform:uppercase">💡 Почему так</div>'+
+      (d.explanation?'<div>'+esc(d.explanation)+'</div>':'')+
+      (d.explanationImage?'<img src="'+esc(d.explanationImage)+'" style="max-width:100%;max-height:200px;border-radius:6px;margin-top:8px;display:block" onerror="this.style.display=\'none\'">':'')+
+    '</div>':'';
+    var typeBadge=qtype==='text'?' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:#fef3c7;color:#92400e">✍️</span>':' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:#dbeafe;color:#1e40af">📋</span>';
+    return '<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">'+
+      '<div style="font-weight:600;margin-bottom:8px;font-size:.95em">'+(i+1)+'. '+esc(d.question||'(без текста)')+typeBadge+'</div>'+
+      imgHtml+contentHtml+explHtml+
+      '<div style="font-size:.82em;color:#64748b;margin-top:8px">Попыток: '+d.attempts+'</div>'+
     '</div>'
   }).join('')
 }
@@ -1142,9 +948,7 @@ function clearTestHistory(){
   if(!confirm('Удалить историю по этому тесту?'))return;
   var toDelete=CACHE.history.filter(function(r){return r.testId===sel1});
   var batch=db.batch();
-  toDelete.forEach(function(r){
-    batch.delete(db.collection('history').doc(r._id))
-  });
+  toDelete.forEach(function(r){batch.delete(db.collection('history').doc(r._id))});
   batch.commit().then(function(){
     CACHE.history=CACHE.history.filter(function(r){return r.testId!==sel1});
     renderResults()
@@ -1152,102 +956,70 @@ function clearTestHistory(){
 }
 
 /* ============================================================
-   ПОЛЬЗОВАТЕЛИ (admin)
+   ПОЛЬЗОВАТЕЛИ
    ============================================================ */
 function renderUsers(){
   var users=getUsers();var h=getHistory();
   var el=document.getElementById('usersList');
-  el.innerHTML=
-    '<div style="margin-bottom:12px;font-size:.9em;color:#64748b">'+
-      'Всего: <b>'+users.length+'</b>. '+
-      '<span class="role-badge role-admin">Админ</span> — доступ к редактору и результатам. '+
-      '<span class="role-badge role-user">Пользователь</span> — проходит тесты.'+
-    '</div>'+
-    '<table style="width:100%;border-collapse:collapse"><thead>'+
-      '<tr style="text-align:left;background:#f8fafc">'+
-        '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Логин</th>'+
-        '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Роль</th>'+
-        '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Прохождений</th>'+
-        '<th style="padding:10px;border-bottom:2px solid #e2e8f0;text-align:right">Действия</th>'+
-      '</tr></thead><tbody>'+
-      users.map(function(u){
-        var runs=h.filter(function(r){return r.user===u.login}).length;
-        var isSelf=u.login===currentUser.login;
-        var isRootAdmin=u.login==='admin';
-        var canDel=!isSelf&&!isRootAdmin;
-        return '<tr style="border-bottom:1px solid #eef2f7">'+
-          '<td style="padding:10px"><b>'+esc(u.login)+'</b>'+
-            (isSelf?' <span style="color:#00AAFF;font-size:.82em">(вы)</span>':'')+
-            (isRootAdmin?' <span style="color:#92400e;font-size:.78em">🔒 основной</span>':'')+'</td>'+
-          '<td style="padding:10px"><span class="role-badge '+(u.role==='admin'?'role-admin':'role-user')+'">'+
-            (u.role==='admin'?'Админ':'Пользователь')+'</span></td>'+
-          '<td style="padding:10px">'+runs+'</td>'+
-          '<td style="padding:10px;text-align:right">'+
-            (u.role!=='admin'?'<button class="small secondary" onclick="promoteUser(\''+esc(u.login)+'\')">↑ Сделать админом</button> ':'')+
-            (u.role==='admin'&&!isRootAdmin&&!isSelf?'<button class="small secondary" onclick="demoteUser(\''+esc(u.login)+'\')">↓ Разжаловать</button> ':'')+
-            (u.role!=='admin'?'<button class="small secondary" onclick="resetUserPassword(\''+esc(u.login)+'\')">🔑 Сброс пароля</button> ':'')+
-            (canDel?'<button class="small danger" onclick="deleteUser(\''+esc(u.login)+'\')">🗑 Удалить</button>':'')+
-          '</td>'+
-        '</tr>'
-      }).join('')+
-    '</tbody></table>'
+  el.innerHTML='<div style="margin-bottom:12px;font-size:.9em;color:#64748b">Всего: <b>'+users.length+'</b></div>'+
+    '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;background:#f8fafc">'+
+      '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Логин</th>'+
+      '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Роль</th>'+
+      '<th style="padding:10px;border-bottom:2px solid #e2e8f0">Прохождений</th>'+
+      '<th style="padding:10px;border-bottom:2px solid #e2e8f0;text-align:right">Действия</th>'+
+    '</tr></thead><tbody>'+
+    users.map(function(u){
+      var runs=h.filter(function(r){return r.user===u.login}).length;
+      var isSelf=u.login===currentUser.login;
+      var isRootAdmin=u.login==='admin';
+      var canDel=!isSelf&&!isRootAdmin;
+      return '<tr style="border-bottom:1px solid #eef2f7">'+
+        '<td style="padding:10px"><b>'+esc(u.login)+'</b>'+(isSelf?' <span style="color:#00AAFF;font-size:.82em">(вы)</span>':'')+(isRootAdmin?' <span style="color:#92400e;font-size:.78em">🔒</span>':'')+'</td>'+
+        '<td style="padding:10px"><span class="role-badge '+(u.role==='admin'?'role-admin':'role-user')+'">'+(u.role==='admin'?'Админ':'Польз.')+'</span></td>'+
+        '<td style="padding:10px">'+runs+'</td>'+
+        '<td style="padding:10px;text-align:right">'+
+          (u.role!=='admin'?'<button class="small secondary" onclick="promoteUser(\''+esc(u.login)+'\')">↑ Админ</button> ':'')+
+          (u.role==='admin'&&!isRootAdmin&&!isSelf?'<button class="small secondary" onclick="demoteUser(\''+esc(u.login)+'\')">↓ Разжаловать</button> ':'')+
+          (u.role!=='admin'?'<button class="small secondary" onclick="resetUserPassword(\''+esc(u.login)+'\')">🔑 Сброс</button> ':'')+
+          (canDel?'<button class="small danger" onclick="deleteUser(\''+esc(u.login)+'\')">🗑</button>':'')+
+        '</td></tr>'
+    }).join('')+'</tbody></table>'
 }
 
 function promoteUser(login){
-  if(!confirm('Сделать «'+login+'» администратором?'))return;
-  var u=CACHE.users.find(function(x){return x.login===login});
-  if(!u)return;
-  db.collection('users').doc(u._id).update({role:'admin'}).then(function(){
-    u.role='admin';renderUsers()
-  }).catch(function(e){alert('Ошибка: '+e.message)})
+  if(!confirm('Сделать «'+login+'» админом?'))return;
+  var u=CACHE.users.find(function(x){return x.login===login});if(!u)return;
+  db.collection('users').doc(u._id).update({role:'admin'}).then(function(){u.role='admin';renderUsers()}).catch(function(e){alert('Ошибка: '+e.message)})
 }
-
 function demoteUser(login){
-  if(!confirm('Разжаловать «'+login+'» в обычного пользователя?'))return;
-  var u=CACHE.users.find(function(x){return x.login===login});
-  if(!u)return;
-  db.collection('users').doc(u._id).update({role:'user'}).then(function(){
-    u.role='user';renderUsers()
-  }).catch(function(e){alert('Ошибка: '+e.message)})
+  if(!confirm('Разжаловать «'+login+'»?'))return;
+  var u=CACHE.users.find(function(x){return x.login===login});if(!u)return;
+  db.collection('users').doc(u._id).update({role:'user'}).then(function(){u.role='user';renderUsers()}).catch(function(e){alert('Ошибка: '+e.message)})
 }
-
 function resetUserPassword(login){
-  var np=prompt('Новый пароль для «'+login+'» (минимум 4 символа):','');
-  if(np===null)return;
-  if(np.length<4){alert('Слишком короткий');return}
-  var u=CACHE.users.find(function(x){return x.login===login});
-  if(!u)return;
-  db.collection('users').doc(u._id).update({passHash:hashPass(np)}).then(function(){
-    u.passHash=hashPass(np);
-    alert('Пароль для «'+login+'» изменён на: '+np)
-  }).catch(function(e){alert('Ошибка: '+e.message)})
+  var np=prompt('Новый пароль для «'+login+'»:','');
+  if(np===null)return;if(np.length<4){alert('Слишком короткий');return}
+  var u=CACHE.users.find(function(x){return x.login===login});if(!u)return;
+  db.collection('users').doc(u._id).update({passHash:hashPass(np)}).then(function(){u.passHash=hashPass(np);alert('Пароль изменён: '+np)}).catch(function(e){alert('Ошибка: '+e.message)})
 }
-
 function deleteUser(login){
-  var u=CACHE.users.find(function(x){return x.login===login});
-  if(!u)return;
-  if(u.login===currentUser.login){alert('Нельзя удалить самого себя');return}
-  if(u.login==='admin'){alert('Нельзя удалить главного администратора');return}
-
+  var u=CACHE.users.find(function(x){return x.login===login});if(!u)return;
+  if(u.login===currentUser.login){alert('Нельзя удалить себя');return}
+  if(u.login==='admin'){alert('Нельзя удалить главного админа');return}
   var runs=CACHE.history.filter(function(r){return r.user===login}).length;
-  var isAdmin=u.role==='admin';
-  var msg='Удалить аккаунт «'+login+'»?';
-  if(isAdmin)msg+='\n\n⚠️ Это АДМИНИСТРАТОР — он тоже потеряет доступ.';
-  if(runs>0)msg+='\n\nВместе с аккаунтом будет удалено '+runs+' записей истории.';
-  msg+='\n\nДействие нельзя отменить.';
+  var msg='Удалить «'+login+'»?';
+  if(u.role==='admin')msg+='\n\n⚠️ Это АДМИН.';
+  if(runs>0)msg+='\n\nУдалится '+runs+' записей истории.';
   if(!confirm(msg))return;
-
   var toDel=CACHE.history.filter(function(r){return r.user===login});
   var batch=db.batch();
   batch.delete(db.collection('users').doc(u._id));
-  toDel.forEach(function(r){
-    batch.delete(db.collection('history').doc(r._id))
-  });
+  toDel.forEach(function(r){batch.delete(db.collection('history').doc(r._id))});
   batch.commit().then(function(){
     CACHE.users=CACHE.users.filter(function(x){return x.login!==login});
     CACHE.history=CACHE.history.filter(function(r){return r.user!==login});
     renderUsers()
-  }).catch(function(e){alert('Ошибка удаления: '+e.message)})
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
 /* ============================================================
@@ -1261,24 +1033,18 @@ function createTest(){
   var id=genId();
   var nt={name:name.trim(),questions:[]};
   db.collection('tests').doc(id).set(nt).then(function(){
-    CACHE.tests.push(Object.assign({_id:id}, nt));
-    editTestId=id;
-    switchTab('editor')
+    CACHE.tests.push(Object.assign({_id:id},nt));
+    editTestId=id;switchTab('editor')
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
-
 function editTest(id){editTestId=id;switchTab('editor')}
-
 function deleteTest(id){
-  var t=CACHE.tests.find(function(x){return x._id===id});
-  if(!t)return;
-  if(!confirm('Удалить тест «'+t.name+'»? Вся история по нему тоже удалится.'))return;
+  var t=CACHE.tests.find(function(x){return x._id===id});if(!t)return;
+  if(!confirm('Удалить тест «'+t.name+'»?'))return;
   var toDel=CACHE.history.filter(function(r){return r.testId===id});
   var batch=db.batch();
   batch.delete(db.collection('tests').doc(id));
-  toDel.forEach(function(r){
-    batch.delete(db.collection('history').doc(r._id))
-  });
+  toDel.forEach(function(r){batch.delete(db.collection('history').doc(r._id))});
   batch.commit().then(function(){
     CACHE.tests=CACHE.tests.filter(function(x){return x._id!==id});
     CACHE.history=CACHE.history.filter(function(r){return r.testId!==id});
@@ -1293,272 +1059,127 @@ function renderEditor(){
   document.getElementById('editorInfo').textContent='Вопросов: '+(t.questions||[]).length;
   document.getElementById('editorTestName').value=t.name;
   var list=document.getElementById('editorList');
-  if(!t.questions.length){
-    list.innerHTML='<div class="empty-state">Нет вопросов — добавьте первый</div>';return
-  }
+  if(!t.questions.length){list.innerHTML='<div class="empty-state">Нет вопросов — добавьте первый</div>';return}
   list.innerHTML=t.questions.map(function(q,qi){
     var qtype=q.type||'choice';
-    var imgBlock=q.image&&q.image.trim()
-      ?'<img class="img-preview" src="'+esc(q.image)+'" onerror="this.style.display=\'none\'">'
-      :'<div style="font-size:.85em;color:#94a3b8;margin-top:4px">Картинка не прикреплена</div>';
-    var explImgBlock=q.explanationImage&&q.explanationImage.trim()
-      ?'<img class="img-preview" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">'
-      :'<div style="font-size:.85em;color:#94a3b8;margin-top:6px">Картинка к пояснению не прикреплена</div>';
-
-    var typeSwitch='<div class="editor-type-tabs">'+
-      '<button class="editor-type-tab '+(qtype==='choice'?'active':'')+'" onclick="setQuestionType('+qi+',\'choice\')">📋 С выбором</button>'+
-      '<button class="editor-type-tab '+(qtype==='text'?'active':'')+'" onclick="setQuestionType('+qi+',\'text\')">✍️ Письменный</button>'+
-      '<button class="editor-type-tab '+(qtype==='free'?'active':'')+'" onclick="setQuestionType('+qi+',\'free\')">📝 Свободный</button>'+
+    var imgBlock=q.image&&q.image.trim()?'<img src="'+esc(q.image)+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px;border:1px solid #e2e8f0" onerror="this.style.display=\'none\'">':'<div style="font-size:.85em;color:#94a3b8;margin-top:4px">Не прикреплена</div>';
+    var explImgBlock=q.explanationImage&&q.explanationImage.trim()?'<img src="'+esc(q.explanationImage)+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px;border:1px solid #e2e8f0" onerror="this.style.display=\'none\'">':'<div style="font-size:.85em;color:#94a3b8;margin-top:6px">Не прикреплена</div>';
+    var typeSwitch='<div style="display:flex;gap:4px;margin-bottom:10px;background:#f1f5f9;padding:4px;border-radius:8px">'+
+      '<button style="flex:1;padding:8px;border:none;border-radius:6px;font-weight:600;cursor:pointer;'+(qtype==='choice'?'background:#fff;color:#00AAFF':'background:none;color:#64748b')+'" onclick="setQuestionType('+qi+',\'choice\')">📋 С выбором</button>'+
+      '<button style="flex:1;padding:8px;border:none;border-radius:6px;font-weight:600;cursor:pointer;'+(qtype==='text'?'background:#fff;color:#00AAFF':'background:none;color:#64748b')+'" onclick="setQuestionType('+qi+',\'text\')">✍️ Письменный</button>'+
     '</div>';
-
     var answerBlock='';
     if(qtype==='choice'){
       var opts=(q.options||[]).map(function(opt,oi){
-        return '<div class="opt-row">'+
-          '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" title="Правильный">'+
-          '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'">'+
+        return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'+
+          '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" style="width:auto">'+
+          '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:6px">'+
           '<button class="small secondary" onclick="delOpt('+qi+','+oi+')" '+((q.options||[]).length<=2?'disabled':'')+'>✕</button>'+
         '</div>'
       }).join('');
-      answerBlock='<div class="field"><label>Варианты</label>'+opts+
+      answerBlock='<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase">Варианты (радио = правильный)</label>'+opts+
         '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>';
-    } else if(qtype==='text'){
-      answerBlock='<div class="field"><label>Правильный ответ (что должен ввести пользователь)</label>'+
-        '<input type="text" value="'+esc(q.correctText||'')+'" oninput="updCorrectText('+qi+',this.value)" placeholder="Например: Париж">'+
-        '<div style="font-size:.8em;color:#64748b;margin-top:4px">Можно указать несколько вариантов через <code>|</code>: <code>Париж|Paris</code></div>'+
-      '</div>';
     } else {
-      answerBlock='<div class="free-answer-note">📝 <b>Свободный ответ.</b> Пользователь вводит любой текст — ответ всегда принимается как верный. Правильный ответ не нужен.</div>';
+      answerBlock='<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase">Правильный ответ (виден после теста)</label>'+
+        '<input type="text" value="'+esc(q.correctText||'')+'" oninput="updCorrectText('+qi+',this.value)" placeholder="Эталонный ответ" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px">'+
+        '<div style="font-size:.8em;color:#64748b;margin-top:4px">Показывается после теста. Ответ пользователя принимается всегда.</div></div>';
     }
-
-    return '<div class="editor-item">'+
-      '<div class="editor-item-header"><span class="num">Вопрос '+(qi+1)+'</span>'+
+    return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+        '<span style="font-weight:700;color:#64748b;font-size:.9em">Вопрос '+(qi+1)+'</span>'+
         '<button class="small danger" onclick="delQ('+qi+')">Удалить</button></div>'+
       typeSwitch+
-      '<div class="field"><label>Текст</label><input type="text" value="'+esc(q.question)+'" oninput="updQ('+qi+',this.value)"></div>'+
-      '<div class="field"><label>Картинка вопроса</label>'+imgBlock+
-        '<div class="img-buttons">'+
-          '<button class="small secondary" onclick="openImageModal('+qi+')">🖼 '+(q.image?'Заменить':'Прикрепить')+'</button>'+
-          (q.image?'<button class="small danger" onclick="removeQImage('+qi+')">Убрать</button>':'')+
-        '</div></div>'+
+      '<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase">Текст</label>'+
+        '<input type="text" value="'+esc(q.question)+'" oninput="updQ('+qi+',this.value)" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px"></div>'+
+      '<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase">Картинка вопроса</label>'+imgBlock+
+        '<div style="display:flex;gap:8px;margin-top:8px"><button class="small secondary" onclick="openImageModal('+qi+')">🖼 '+(q.image?'Заменить':'Прикрепить')+'</button>'+
+        (q.image?'<button class="small danger" onclick="removeQImage('+qi+')">Убрать</button>':'')+'</div></div>'+
       answerBlock+
-      '<div class="field"><label>💡 Пояснение (видно после прохождения)</label>'+
-        '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Комментарий к ответу" style="min-height:80px;font-size:.92em">'+esc(q.explanation||'')+'</textarea>'+
+      '<div style="margin-bottom:12px"><label style="display:block;font-size:.82em;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase">💡 Пояснение (почему правильный)</label>'+
+        '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Объясните, почему этот ответ правильный" style="width:100%;min-height:80px;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-family:inherit;font-size:.92em">'+esc(q.explanation||'')+'</textarea>'+
         explImgBlock+
-        '<div class="img-buttons">'+
-          '<button class="small secondary" onclick="openExplanationImageModal('+qi+')">🖼 '+(q.explanationImage?'Заменить картинку':'Прикрепить картинку к пояснению')+'</button>'+
-          (q.explanationImage?'<button class="small danger" onclick="removeExplanationImage('+qi+')">Убрать</button>':'')+
-        '</div>'+
-      '</div>'+
+        '<div style="display:flex;gap:8px;margin-top:8px"><button class="small secondary" onclick="openExplanationImageModal('+qi+')">🖼 '+(q.explanationImage?'Заменить':'Прикрепить картинку')+'</button>'+
+        (q.explanationImage?'<button class="small danger" onclick="removeExplanationImage('+qi+')">Убрать</button>':'')+'</div></div>'+
     '</div>'
   }).join('')
 }
 
 function saveTestField(updates){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  db.collection('tests').doc(editTestId).update(updates).catch(function(e){
-    showMsg('editorMsg','err','Ошибка: '+e.message)
-  })
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  db.collection('tests').doc(editTestId).update(updates).catch(function(e){alert('Ошибка: '+e.message)})
 }
-
 function updateTestName(v){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.name=v;
-  document.getElementById('editorTitle').textContent='Редактор: '+v;
-  saveTestField({name:v})
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  t.name=v;document.getElementById('editorTitle').textContent='Редактор: '+v;saveTestField({name:v})
 }
-
 function addQuestion(){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions.push({
-    type:'choice',
-    question:'',
-    options:['','','',''],
-    correct:0,
-    correctText:'',
-    image:'',
-    explanation:'',
-    explanationImage:''
-  });
-  saveTestField({questions:t.questions});
-  renderEditor()
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  t.questions.push({type:'choice',question:'',options:['','','',''],correct:0,correctText:'',image:'',explanation:'',explanationImage:''});
+  saveTestField({questions:t.questions});renderEditor()
 }
-
 function setQuestionType(qi,newType){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  var q=t.questions[qi];
-  q.type=newType;
-  if(newType==='choice'){
-    if(!q.options||!q.options.length){q.options=['','','',''];q.correct=0}
-    if(typeof q.correct!=='number')q.correct=0
-  } else if(newType==='text'){
-    if(!q.correctText)q.correctText='';
-    if(!q.options)q.options=[]
-  } else {
-    if(!q.options)q.options=[]
-  }
-  saveTestField({questions:t.questions});
-  renderEditor()
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
+  var q=t.questions[qi];q.type=newType;
+  if(newType==='choice'){if(!q.options||!q.options.length){q.options=['','','',''];q.correct=0}}
+  else{if(!q.correctText)q.correctText='';if(!q.options)q.options=[]}
+  saveTestField({questions:t.questions});renderEditor()
 }
-
-function updQ(qi,v){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].question=v;
-  saveTestField({questions:t.questions})
-}
-
-function updOpt(qi,oi,v){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].options[oi]=v;
-  saveTestField({questions:t.questions})
-}
-
-function updCorrectText(qi,v){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].correctText=v;
-  saveTestField({questions:t.questions})
-}
-
-function updExplanation(qi,v){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].explanation=v;
-  saveTestField({questions:t.questions})
-}
-
-function setCorrect(qi,oi){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].correct=oi;
-  saveTestField({questions:t.questions})
-}
-
-function addOpt(qi){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].options.push('');
-  saveTestField({questions:t.questions});
-  renderEditor()
-}
-
-function delOpt(qi,oi){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t||t.questions[qi].options.length<=2)return;
-  t.questions[qi].options.splice(oi,1);
-  if(t.questions[qi].correct===oi)t.questions[qi].correct=0;
-  else if(t.questions[qi].correct>oi)t.questions[qi].correct--;
-  saveTestField({questions:t.questions});
-  renderEditor()
-}
-
-function delQ(qi){
-  if(!confirm('Удалить вопрос?'))return;
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions.splice(qi,1);
-  saveTestField({questions:t.questions});
-  renderEditor()
-}
+function updQ(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].question=v;saveTestField({questions:t.questions})}
+function updOpt(qi,oi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options[oi]=v;saveTestField({questions:t.questions})}
+function updCorrectText(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correctText=v;saveTestField({questions:t.questions})}
+function updExplanation(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].explanation=v;saveTestField({questions:t.questions})}
+function setCorrect(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correct=oi;saveTestField({questions:t.questions})}
+function addOpt(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options.push('');saveTestField({questions:t.questions});renderEditor()}
+function delOpt(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t||t.questions[qi].options.length<=2)return;t.questions[qi].options.splice(oi,1);if(t.questions[qi].correct===oi)t.questions[qi].correct=0;else if(t.questions[qi].correct>oi)t.questions[qi].correct--;saveTestField({questions:t.questions});renderEditor()}
+function delQ(qi){if(!confirm('Удалить вопрос?'))return;var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions.splice(qi,1);saveTestField({questions:t.questions});renderEditor()}
 
 /* ============================================================
-   КАРТИНКИ — универсальная модалка
+   КАРТИНКИ
    ============================================================ */
-var imgMode=null;
-var imgTargetQ=null;
-var imgPendingData=null;
+var imgMode=null;var imgTargetQ=null;var imgPendingData=null;
 
 function openImageModal(qi){
-  imgMode='question';
-  imgTargetQ=qi;
-  imgPendingData=null;
+  imgMode='question';imgTargetQ=qi;imgPendingData=null;
   document.getElementById('imgUrlInput').value='';
   document.getElementById('imgFileInput').value='';
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   var curImg=t?t.questions[qi].image:'';
-  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img class="img-preview" src="'+esc(curImg)+'">':'';
+  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img src="'+esc(curImg)+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">':'';
   document.getElementById('imageModalTitle').textContent='Прикрепить картинку к вопросу';
   document.getElementById('imageModal').classList.remove('hidden')
 }
-
 function openExplanationImageModal(qi){
-  imgMode='explanation';
-  imgTargetQ=qi;
-  imgPendingData=null;
+  imgMode='explanation';imgTargetQ=qi;imgPendingData=null;
   document.getElementById('imgUrlInput').value='';
   document.getElementById('imgFileInput').value='';
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   var curImg=t?t.questions[qi].explanationImage:'';
-  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img class="img-preview" src="'+esc(curImg)+'">':'';
+  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img src="'+esc(curImg)+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">':'';
   document.getElementById('imageModalTitle').textContent='Картинка к пояснению';
   document.getElementById('imageModal').classList.remove('hidden')
 }
-
-function closeImageModal(){
-  document.getElementById('imageModal').classList.add('hidden');
-  imgMode=null;imgTargetQ=null;imgPendingData=null
-}
-
+function closeImageModal(){document.getElementById('imageModal').classList.add('hidden');imgMode=null;imgTargetQ=null;imgPendingData=null}
 function loadImageFile(e){
   var f=e.target.files[0];if(!f)return;
-  if(f.size>800*1024){
-    alert('Файл больше 800 КБ. Используйте URL или меньший файл.');
-    e.target.value='';return
-  }
+  if(f.size>800*1024){alert('Файл больше 800 КБ');e.target.value='';return}
   var r=new FileReader();
-  r.onload=function(ev){
-    imgPendingData=ev.target.result;
-    document.getElementById('imgPreviewWrap').innerHTML='<img class="img-preview" src="'+imgPendingData+'">'
-  };
+  r.onload=function(ev){imgPendingData=ev.target.result;document.getElementById('imgPreviewWrap').innerHTML='<img src="'+imgPendingData+'" style="max-width:100%;max-height:150px;border-radius:6px;margin-top:8px">'};
   r.readAsDataURL(f)
 }
-
 function saveImage(){
   if(imgTargetQ===null||!imgMode)return;
   var url=document.getElementById('imgUrlInput').value.trim();
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
   var newVal='';
   if(imgPendingData)newVal=imgPendingData;
   else if(url)newVal=url;
-
   if(imgMode==='question'){t.questions[imgTargetQ].image=newVal}
   else{t.questions[imgTargetQ].explanationImage=newVal}
-
-  saveTestField({questions:t.questions});
-  closeImageModal();
-  renderEditor()
+  saveTestField({questions:t.questions});closeImageModal();renderEditor()
 }
-
-function clearImage(){
-  document.getElementById('imgUrlInput').value='';
-  document.getElementById('imgFileInput').value='';
-  imgPendingData=null;
-  document.getElementById('imgPreviewWrap').innerHTML=''
-}
-
-function removeQImage(qi){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].image='';
-  saveTestField({questions:t.questions});
-  renderEditor()
-}
-
-function removeExplanationImage(qi){
-  var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  if(!t)return;
-  t.questions[qi].explanationImage='';
-  saveTestField({questions:t.questions});
-  renderEditor()
-}
+function clearImage(){document.getElementById('imgUrlInput').value='';document.getElementById('imgFileInput').value='';imgPendingData=null;document.getElementById('imgPreviewWrap').innerHTML=''}
+function removeQImage(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].image='';saveTestField({questions:t.questions});renderEditor()}
+function removeExplanationImage(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].explanationImage='';saveTestField({questions:t.questions});renderEditor()}
 
 initApp();
 </script>
