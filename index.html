@@ -1954,7 +1954,7 @@ function setQuestionType(qi,newType){
 }
 function updQ(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].question=v;saveTestField({questions:t.questions})}
 function updOpt(qi,oi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options[oi]=v;saveTestField({questions:t.questions})}
-function updCorrectText(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if
+function updCorrectText(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correctText=v;saveTestField({questions:t.questions})}
 function updExplanation(qi,v){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].explanation=v;saveTestField({questions:t.questions})}
 function setCorrect(qi,oi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].correct=oi;saveTestField({questions:t.questions})}
 function addOpt(qi){var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;t.questions[qi].options.push('');saveTestField({questions:t.questions});renderEditor()}
