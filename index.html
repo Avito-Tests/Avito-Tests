@@ -89,11 +89,10 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 .q-review-meta{font-size:.82em;color:#64748b;margin-top:8px}
 .explanation{margin-top:10px;padding:12px 14px;background:#eff9ff;border-left:4px solid #00AAFF;border-radius:6px;font-size:.92em;color:#1e293b;line-height:1.5}
 .explanation-title{font-weight:700;color:#0090db;margin-bottom:4px;font-size:.85em;text-transform:uppercase;letter-spacing:.03em}
-.result-summary{background:#f8fafc;border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid #e2e8f0}
 .editor-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa}
 .editor-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .editor-item-header .num{font-weight:700;color:#64748b;font-size:.9em}
-.field{margin-bottom:10px}
+.field{margin-bottom:12px}
 .field label{display:block;font-size:.82em;color:#64748b;margin-bottom:4px;font-weight:600;text-transform:uppercase}
 .opt-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .opt-row input[type=radio]{flex-shrink:0;width:auto}
@@ -734,7 +733,6 @@ function finishTest(){
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
-  // Разбор с правильными ответами и пояснениями
   var reviewHtml = currentTest.questions.map(function(q,i){
     var st = qStats[i];
     var optsHtml = q.options.map(function(opt, oi){
@@ -775,7 +773,6 @@ function finishTest(){
 
   document.getElementById('finalReview').innerHTML = '<h3>📝 Разбор ответов</h3>' + reviewHtml;
 
-  // Сохранение в историю
   var details = currentTest.questions.map(function(q,i){
     var choices = qStats[i].choices.slice();
     var attemptLog = choices.map(function(chosenIdx, idx){
@@ -1165,7 +1162,7 @@ function renderEditor(){
       '<div class="field"><label>💡 Пояснение (видно после прохождения)</label>'+
         '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Почему этот ответ правильный? Что важно запомнить?" style="min-height:80px;font-size:.92em">'+esc(q.explanation||'')+'</textarea>'+
       '</div>'+
-      '<div class="field"><label>Варианты (радио = правильный)</label>'+opts+
+      '<div class="field"><label>Варианты</label>'+opts+
         '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>'+
     '</div>'
   }).join('')
