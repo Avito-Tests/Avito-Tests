@@ -1519,18 +1519,42 @@ function renderStats(){
   '</div>';
 
   var qStatsArr=(test.questions||[]).map(function(q,qi){
-    var asked=0,correct=0,attemptsSum=0;
+    var asked=0,correctFirstTry=0,attemptsSum=0,overallCorrect=0;
     results.forEach(function(r){
       var d=r.details[qi];
       if(!d)return;
       asked++;
-      attemptsSum+=d.attempts||0;
-      if(d.type==='choice'){if(d.solved)correct++}
-      else{if(d.adminCorrect===true)correct++}
+      attemptsSum+=(d.attempts||0);
+
+      var solvedHere=false;
+      if(d.type==='choice'){
+        if(d.solved){
+          overallCorrect++;
+          solvedHere=true;
+        }
+      } else {
+        if(d.adminCorrect===true){
+          overallCorrect++;
+          solvedHere=true;
+        }
+      }
+
+      // В статистику идёт ТОЛЬКО если решён с первой попытки
+      if(solvedHere && (d.attempts||0)===1){
+        correctFirstTry++;
+      }
     });
-    var pct=asked?Math.round(correct/asked*100):0;
+    var pct=asked?Math.round(correctFirstTry/asked*100):0;
     var avgAttempts=asked?(attemptsSum/asked).toFixed(1):0;
-    return {question:q.question||'(без текста)',type:q.type||'choice',asked:asked,correct:correct,pct:pct,avgAttempts:avgAttempts}
+    return {
+      question:q.question||'(без текста)',
+      type:q.type||'choice',
+      asked:asked,
+      correct:correctFirstTry,      // для статистики — только «с первой попытки»
+      overallCorrect:overallCorrect,// справочно
+      pct:pct,
+      avgAttempts:avgAttempts
+    }
   });
 
   var questionsHtml=qStatsArr.map(function(s,i){
@@ -1540,7 +1564,7 @@ function renderStats(){
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'+
         '<div style="flex:1;min-width:200px">'+
           '<div style="font-weight:600;margin-bottom:4px">'+(i+1)+'. '+esc(s.question)+' '+tb+'</div>'+
-          '<div style="font-size:.85em;color:var(--muted)">Задан '+s.asked+' раз • верно '+s.correct+' • в среднем '+s.avgAttempts+' попыток</div>'+
+          '<div style="font-size:.85em;color:var(--muted)">Задан '+s.asked+' раз • верно с 1-й попытки '+s.correct+' • верно в итоге '+s.overallCorrect+' • в среднем '+s.avgAttempts+' попыток</div>'+
         '</div>'+
         '<div style="text-align:right;min-width:80px">'+
           '<div style="font-size:1.4em;font-weight:700;color:'+color+'">'+s.pct+'%</div>'+
