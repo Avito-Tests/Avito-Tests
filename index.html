@@ -89,6 +89,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 .q-review-meta{font-size:.82em;color:#64748b;margin-top:8px}
 .explanation{margin-top:10px;padding:12px 14px;background:#eff9ff;border-left:4px solid #00AAFF;border-radius:6px;font-size:.92em;color:#1e293b;line-height:1.5}
 .explanation-title{font-weight:700;color:#0090db;margin-bottom:4px;font-size:.85em;text-transform:uppercase;letter-spacing:.03em}
+.explanation-image{max-width:100%;max-height:250px;border-radius:6px;margin-top:8px;display:block;border:1px solid #bae6fd}
 .editor-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa}
 .editor-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .editor-item-header .num{font-weight:700;color:#64748b;font-size:.9em}
@@ -262,7 +263,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 
 <div id="imageModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeImageModal()">
   <div class="modal">
-    <h3>Прикрепить картинку</h3>
+    <h3 id="imageModalTitle">Прикрепить картинку</h3>
     <div class="form-row"><label>URL картинки</label><input type="text" id="imgUrlInput" placeholder="https://..."></div>
     <div class="form-row"><label>или файл с диска</label><input type="file" id="imgFileInput" accept="image/*" onchange="loadImageFile(event)"></div>
     <div id="imgPreviewWrap"></div>
@@ -353,12 +354,12 @@ function ensureAdminAndDemos(){
   if(CACHE.tests.length === 0){
     var d1Id=genId(), d2Id=genId();
     var d1={name:'Демо: общие знания',questions:[
-      {question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,image:'',explanation:'Париж — столица Франции с 987 года.'},
-      {question:'7 × 8 = ?',options:['54','56','48','64'],correct:1,image:'',explanation:'7 × 8 = 56. Табличное умножение.'}
+      {question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
+      {question:'7 × 8 = ?',options:['54','56','48','64'],correct:1,image:'',explanation:'7 × 8 = 56. Табличное умножение.',explanationImage:''}
     ]};
     var d2={name:'Демо: Авито',questions:[
-      {question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,image:'',explanation:'Авито — крупнейшая в России доска объявлений.'},
-      {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:'',explanation:'Фирменный цвет Авито — синий.'}
+      {question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,image:'',explanation:'Авито — крупнейшая в России доска объявлений.',explanationImage:''},
+      {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:'',explanation:'Фирменный цвет Авито — синий.',explanationImage:''}
     ]};
     promises.push(db.collection('tests').doc(d1Id).set(d1).then(function(){
       CACHE.tests.push(Object.assign({_id:d1Id}, d1))
@@ -750,10 +751,12 @@ function finishTest(){
       ? '<img class="q-image" src="'+esc(q.image)+'" style="max-height:200px;margin-bottom:8px" onerror="this.style.display=\'none\'">'
       : '';
 
-    var explHtml = q.explanation && q.explanation.trim()
+    var hasExpl = (q.explanation && q.explanation.trim()) || (q.explanationImage && q.explanationImage.trim());
+    var explHtml = hasExpl
       ? '<div class="explanation">'+
           '<div class="explanation-title">💡 Пояснение</div>'+
-          esc(q.explanation)+
+          (q.explanation ? '<div>'+esc(q.explanation)+'</div>' : '')+
+          (q.explanationImage ? '<img class="explanation-image" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">' : '')+
         '</div>'
       : '';
 
@@ -787,6 +790,7 @@ function finishTest(){
       options: q.options,
       correct: q.correct,
       explanation: q.explanation || '',
+      explanationImage: q.explanationImage || '',
       image: q.image || '',
       attempts: qStats[i].attempts,
       solved: qStats[i].solved,
@@ -944,10 +948,12 @@ function buildHistoryDetailHTML(r){
       ? '<img class="q-image" src="'+esc(d.image)+'" style="max-height:180px;margin-bottom:8px" onerror="this.style.display=\'none\'">'
       : '';
 
-    var explHtml = d.explanation && d.explanation.trim()
+    var hasExpl = (d.explanation && d.explanation.trim()) || (d.explanationImage && d.explanationImage.trim());
+    var explHtml = hasExpl
       ? '<div class="explanation">'+
           '<div class="explanation-title">💡 Пояснение</div>'+
-          esc(d.explanation)+
+          (d.explanation ? '<div>'+esc(d.explanation)+'</div>' : '')+
+          (d.explanationImage ? '<img class="explanation-image" src="'+esc(d.explanationImage)+'" onerror="this.style.display=\'none\'">' : '')+
         '</div>'
       : '';
 
@@ -1150,17 +1156,25 @@ function renderEditor(){
     var imgBlock=q.image&&q.image.trim()
       ?'<img class="img-preview" src="'+esc(q.image)+'" onerror="this.style.display=\'none\'">'
       :'<div style="font-size:.85em;color:#94a3b8;margin-top:4px">Картинка не прикреплена</div>';
+    var explImgBlock=q.explanationImage&&q.explanationImage.trim()
+      ?'<img class="img-preview" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">'
+      :'<div style="font-size:.85em;color:#94a3b8;margin-top:6px">Картинка к пояснению не прикреплена</div>';
     return '<div class="editor-item">'+
       '<div class="editor-item-header"><span class="num">Вопрос '+(qi+1)+'</span>'+
         '<button class="small danger" onclick="delQ('+qi+')">Удалить</button></div>'+
       '<div class="field"><label>Текст</label><input type="text" value="'+esc(q.question)+'" oninput="updQ('+qi+',this.value)"></div>'+
-      '<div class="field"><label>Картинка</label>'+imgBlock+
+      '<div class="field"><label>Картинка вопроса</label>'+imgBlock+
         '<div class="img-buttons">'+
           '<button class="small secondary" onclick="openImageModal('+qi+')">🖼 '+(q.image?'Заменить':'Прикрепить')+'</button>'+
           (q.image?'<button class="small danger" onclick="removeQImage('+qi+')">Убрать</button>':'')+
         '</div></div>'+
       '<div class="field"><label>💡 Пояснение (видно после прохождения)</label>'+
         '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Почему этот ответ правильный? Что важно запомнить?" style="min-height:80px;font-size:.92em">'+esc(q.explanation||'')+'</textarea>'+
+        explImgBlock+
+        '<div class="img-buttons">'+
+          '<button class="small secondary" onclick="openExplanationImageModal('+qi+')">🖼 '+(q.explanationImage?'Заменить картинку':'Прикрепить картинку к пояснению')+'</button>'+
+          (q.explanationImage?'<button class="small danger" onclick="removeExplanationImage('+qi+')">Убрать</button>':'')+
+        '</div>'+
       '</div>'+
       '<div class="field"><label>Варианты</label>'+opts+
         '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>'+
@@ -1187,7 +1201,7 @@ function updateTestName(v){
 function addQuestion(){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
-  t.questions.push({question:'',options:['','','',''],correct:0,image:'',explanation:''});
+  t.questions.push({question:'',options:['','','',''],correct:0,image:'',explanation:'',explanationImage:''});
   saveTestField({questions:t.questions});
   renderEditor()
 }
@@ -1248,25 +1262,48 @@ function delQ(qi){
 }
 
 /* ============================================================
-   КАРТИНКИ
+   КАРТИНКИ — универсальная модалка для двух режимов
+   mode: 'question' | 'explanation'
    ============================================================ */
-var imgTargetQ=null;
-var imgPendingData=null;
+var imgMode = null;
+var imgTargetQ = null;
+var imgPendingData = null;
 
 function openImageModal(qi){
-  imgTargetQ=qi;
-  imgPendingData=null;
-  document.getElementById('imgUrlInput').value='';
-  document.getElementById('imgFileInput').value='';
+  imgMode = 'question';
+  imgTargetQ = qi;
+  imgPendingData = null;
+  document.getElementById('imgUrlInput').value = '';
+  document.getElementById('imgFileInput').value = '';
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  var curImg=t?t.questions[qi].image:'';
-  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img class="img-preview" src="'+esc(curImg)+'">':'';
+  var curImg = t ? t.questions[qi].image : '';
+  document.getElementById('imgPreviewWrap').innerHTML = curImg
+    ? '<img class="img-preview" src="'+esc(curImg)+'">' : '';
+  document.getElementById('imageModalTitle').textContent = 'Прикрепить картинку к вопросу';
   document.getElementById('imageModal').classList.remove('hidden')
 }
+
+function openExplanationImageModal(qi){
+  imgMode = 'explanation';
+  imgTargetQ = qi;
+  imgPendingData = null;
+  document.getElementById('imgUrlInput').value = '';
+  document.getElementById('imgFileInput').value = '';
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  var curImg = t ? t.questions[qi].explanationImage : '';
+  document.getElementById('imgPreviewWrap').innerHTML = curImg
+    ? '<img class="img-preview" src="'+esc(curImg)+'">' : '';
+  document.getElementById('imageModalTitle').textContent = 'Картинка к пояснению';
+  document.getElementById('imageModal').classList.remove('hidden')
+}
+
 function closeImageModal(){
   document.getElementById('imageModal').classList.add('hidden');
-  imgTargetQ=null;imgPendingData=null
+  imgMode = null;
+  imgTargetQ = null;
+  imgPendingData = null;
 }
+
 function loadImageFile(e){
   var f=e.target.files[0];if(!f)return;
   if(f.size>800*1024){
@@ -1280,27 +1317,46 @@ function loadImageFile(e){
   };
   r.readAsDataURL(f)
 }
+
 function saveImage(){
-  if(imgTargetQ===null)return;
+  if(imgTargetQ===null || !imgMode)return;
   var url=document.getElementById('imgUrlInput').value.trim();
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
-  if(imgPendingData){t.questions[imgTargetQ].image=imgPendingData}
-  else if(url){t.questions[imgTargetQ].image=url}
+
+  var newVal = '';
+  if(imgPendingData) newVal = imgPendingData;
+  else if(url) newVal = url;
+
+  if(imgMode === 'question'){
+    t.questions[imgTargetQ].image = newVal;
+  } else {
+    t.questions[imgTargetQ].explanationImage = newVal;
+  }
   saveTestField({questions:t.questions});
   closeImageModal();
   renderEditor()
 }
+
 function clearImage(){
   document.getElementById('imgUrlInput').value='';
   document.getElementById('imgFileInput').value='';
   imgPendingData=null;
   document.getElementById('imgPreviewWrap').innerHTML=''
 }
+
 function removeQImage(qi){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
   t.questions[qi].image='';
+  saveTestField({questions:t.questions});
+  renderEditor()
+}
+
+function removeExplanationImage(qi){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  if(!t)return;
+  t.questions[qi].explanationImage='';
   saveTestField({questions:t.questions});
   renderEditor()
 }
