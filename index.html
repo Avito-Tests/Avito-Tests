@@ -11,17 +11,8 @@ h1{font-size:1.4em}
 h2{font-size:1.15em;margin:0 0 14px}
 h3{font-size:1.02em;margin:20px 0 10px}
 .card{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.option{
-  display:block;padding:14px 18px;border:2px solid #ddd;border-radius:10px;
-  margin-bottom:10px;cursor:pointer;user-select:none;transition:all .15s;
-  background:#fff;font-size:1em;position:relative;padding-left:52px
-}
-.option::before{
-  content:attr(data-letter);position:absolute;left:14px;top:50%;transform:translateY(-50%);
-  width:28px;height:28px;border-radius:50%;background:#f1f5f9;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:.9em;color:#64748b;transition:all .15s
-}
+.option{display:block;padding:14px 18px;border:2px solid #ddd;border-radius:10px;margin-bottom:10px;cursor:pointer;user-select:none;transition:all .15s;background:#fff;font-size:1em;position:relative;padding-left:52px}
+.option::before{content:attr(data-letter);position:absolute;left:14px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9em;color:#64748b;transition:all .15s}
 .option:hover{border-color:#94a3b8;background:#f8fafc}
 .option.selected{border-color:#00AAFF;background:#eff9ff}
 .option.selected::before{background:#00AAFF;color:#fff}
@@ -96,6 +87,9 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 .attempt-log-row{padding:3px 0;border-bottom:1px solid #f1f5f9}
 .attempt-log-row:last-child{border-bottom:none}
 .q-review-meta{font-size:.82em;color:#64748b;margin-top:8px}
+.explanation{margin-top:10px;padding:12px 14px;background:#eff9ff;border-left:4px solid #00AAFF;border-radius:6px;font-size:.92em;color:#1e293b;line-height:1.5}
+.explanation-title{font-weight:700;color:#0090db;margin-bottom:4px;font-size:.85em;text-transform:uppercase;letter-spacing:.03em}
+.result-summary{background:#f8fafc;border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid #e2e8f0}
 .editor-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa}
 .editor-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .editor-item-header .num{font-weight:700;color:#64748b;font-size:.9em}
@@ -201,6 +195,7 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
     <div id="finishView" class="card hidden">
       <h2>📊 Результаты</h2>
       <div class="stats" id="finalStats"></div>
+      <div id="finalReview" style="margin-top:20px"></div>
       <div class="toolbar">
         <button onclick="startTest()">Пройти заново</button>
         <button class="secondary" onclick="backToTests()">← К списку</button>
@@ -359,12 +354,12 @@ function ensureAdminAndDemos(){
   if(CACHE.tests.length === 0){
     var d1Id=genId(), d2Id=genId();
     var d1={name:'Демо: общие знания',questions:[
-      {question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,image:''},
-      {question:'7 × 8 = ?',options:['54','56','48','64'],correct:1,image:''}
+      {question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,image:'',explanation:'Париж — столица Франции с 987 года.'},
+      {question:'7 × 8 = ?',options:['54','56','48','64'],correct:1,image:'',explanation:'7 × 8 = 56. Табличное умножение.'}
     ]};
     var d2={name:'Демо: Авито',questions:[
-      {question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,image:''},
-      {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:''}
+      {question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,image:'',explanation:'Авито — крупнейшая в России доска объявлений.'},
+      {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:'',explanation:'Фирменный цвет Авито — синий.'}
     ]};
     promises.push(db.collection('tests').doc(d1Id).set(d1).then(function(){
       CACHE.tests.push(Object.assign({_id:d1Id}, d1))
@@ -568,7 +563,7 @@ function openTestStart(id){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
   document.getElementById('startTitle').textContent=t.name;
-  document.getElementById('startInfo').textContent='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены. Можно вернуться к предыдущему вопросу.'
+  document.getElementById('startInfo').textContent='В тесте '+t.questions.length+' вопрос(ов). Попытки не ограничены. После прохождения увидите правильные ответы и пояснения.'
 }
 
 /* ============================================================
@@ -664,7 +659,6 @@ function pickOption(i){
   })
 }
 
-/* ВАЖНО: при неверном ответе правильный НЕ подсвечивается */
 function checkAnswer(){
   if(currentSel[cur]===null){
     var r=document.getElementById('resultBox');
@@ -680,7 +674,6 @@ function checkAnswer(){
   var ok=chosen===q.correct;
 
   if(ok){
-    // Верно — подсвечиваем правильный зелёным
     document.querySelectorAll('.option').forEach(function(el,i){
       el.classList.remove('selected','wrong');
       if(i===q.correct)el.classList.add('correct');
@@ -694,14 +687,13 @@ function checkAnswer(){
     nb.classList.remove('hidden');
     nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   } else {
-    // Неверно — подсвечиваем ТОЛЬКО выбранный красным, правильный не показываем
     document.querySelectorAll('.option').forEach(function(el,i){
       el.classList.remove('selected','correct');
       if(i===chosen)el.classList.add('wrong');
     });
-    var rb=document.getElementById('resultBox');
-    rb.className='result fail';
-    rb.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой вариант.';
+    var rb2=document.getElementById('resultBox');
+    rb2.className='result fail';
+    rb2.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой вариант.';
     setTimeout(function(){
       chk=false;
       document.querySelectorAll('.option').forEach(function(el,i){
@@ -732,16 +724,58 @@ function finishTest(){
   document.getElementById('finishView').classList.remove('hidden');
   var tot=qStats.reduce(function(s,q){return s+q.attempts},0);
   var ft=qStats.filter(function(q){return q.solved&&q.attempts===1}).length;
+  var solved=qStats.filter(function(q){return q.solved}).length;
   var el=Math.round((Date.now()-started)/1000);
 
   document.getElementById('finalStats').innerHTML =
     '<div class="stat"><b>'+currentTest.questions.length+'</b>вопросов</div>'+
-    '<div class="stat"><b>'+qStats.filter(function(q){return q.solved}).length+'</b>решено</div>'+
+    '<div class="stat"><b>'+solved+'</b>решено</div>'+
     '<div class="stat"><b>'+ft+'</b>с 1-й попытки</div>'+
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
-  // Детали с полным логом попыток по каждому вопросу
+  // Разбор с правильными ответами и пояснениями
+  var reviewHtml = currentTest.questions.map(function(q,i){
+    var st = qStats[i];
+    var optsHtml = q.options.map(function(opt, oi){
+      var cls='q-review-opt';
+      if(oi===q.correct)cls+=' correct';
+      if(st.choices.indexOf(oi)!==-1 && oi!==q.correct)cls+=' chosen wrong';
+      else if(st.choices.indexOf(oi)!==-1)cls+=' chosen';
+      var marks=[];
+      if(oi===q.correct)marks.push('✓ правильный');
+      if(st.choices.indexOf(oi)!==-1)marks.push('👈 вы выбирали');
+      return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
+    }).join('');
+
+    var imgHtml = q.image && q.image.trim()
+      ? '<img class="q-image" src="'+esc(q.image)+'" style="max-height:200px;margin-bottom:8px" onerror="this.style.display=\'none\'">'
+      : '';
+
+    var explHtml = q.explanation && q.explanation.trim()
+      ? '<div class="explanation">'+
+          '<div class="explanation-title">💡 Пояснение</div>'+
+          esc(q.explanation)+
+        '</div>'
+      : '';
+
+    return '<div class="q-review">'+
+      '<div class="q-review-title">'+(i+1)+'. '+esc(q.question||'(без текста)')+
+        (st.solved?' <span style="color:#16a34a">✅</span>':' <span style="color:#dc2626">❌</span>')+
+      '</div>'+
+      imgHtml+
+      '<div class="q-review-opts">'+optsHtml+'</div>'+
+      explHtml+
+      '<div class="q-review-meta">'+
+        'Попыток: '+st.attempts+
+        (st.firstChoice!==null?' • Первый выбор: '+letterOf(st.firstChoice):'')+
+      '</div>'+
+    '</div>'
+  }).join('');
+
+  document.getElementById('finalReview').innerHTML = '<h3>📝 Разбор ответов</h3>' + reviewHtml;
+
+  // Сохранение в историю
   var details = currentTest.questions.map(function(q,i){
     var choices = qStats[i].choices.slice();
     var attemptLog = choices.map(function(chosenIdx, idx){
@@ -755,6 +789,8 @@ function finishTest(){
       question: q.question,
       options: q.options,
       correct: q.correct,
+      explanation: q.explanation || '',
+      image: q.image || '',
       attempts: qStats[i].attempts,
       solved: qStats[i].solved,
       choices: choices,
@@ -907,6 +943,17 @@ function buildHistoryDetailHTML(r){
       return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
     }).join('');
 
+    var imgHtml = d.image && d.image.trim()
+      ? '<img class="q-image" src="'+esc(d.image)+'" style="max-height:180px;margin-bottom:8px" onerror="this.style.display=\'none\'">'
+      : '';
+
+    var explHtml = d.explanation && d.explanation.trim()
+      ? '<div class="explanation">'+
+          '<div class="explanation-title">💡 Пояснение</div>'+
+          esc(d.explanation)+
+        '</div>'
+      : '';
+
     var logHtml='';
     if(d.attemptLog&&d.attemptLog.length){
       logHtml='<div class="attempt-log">'+
@@ -922,7 +969,9 @@ function buildHistoryDetailHTML(r){
 
     return '<div class="q-review">'+
       '<div class="q-review-title">'+(i+1)+'. '+esc(d.question||'(без текста)')+'</div>'+
+      imgHtml+
       '<div class="q-review-opts">'+optsHtml+'</div>'+
+      explHtml+
       logHtml+
       '<div class="q-review-meta">'+
         'Попыток: '+d.attempts+' • '+
@@ -949,7 +998,7 @@ function clearTestHistory(){
 }
 
 /* ============================================================
-   ПОЛЬЗОВАТЕЛИ (admin) — удаление и разжалование админов
+   ПОЛЬЗОВАТЕЛИ (admin)
    ============================================================ */
 function renderUsers(){
   var users=getUsers();var h=getHistory();
@@ -1113,6 +1162,9 @@ function renderEditor(){
           '<button class="small secondary" onclick="openImageModal('+qi+')">🖼 '+(q.image?'Заменить':'Прикрепить')+'</button>'+
           (q.image?'<button class="small danger" onclick="removeQImage('+qi+')">Убрать</button>':'')+
         '</div></div>'+
+      '<div class="field"><label>💡 Пояснение (видно после прохождения)</label>'+
+        '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Почему этот ответ правильный? Что важно запомнить?" style="min-height:80px;font-size:.92em">'+esc(q.explanation||'')+'</textarea>'+
+      '</div>'+
       '<div class="field"><label>Варианты (радио = правильный)</label>'+opts+
         '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>'+
     '</div>'
@@ -1138,7 +1190,7 @@ function updateTestName(v){
 function addQuestion(){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
-  t.questions.push({question:'',options:['','','',''],correct:0,image:''});
+  t.questions.push({question:'',options:['','','',''],correct:0,image:'',explanation:''});
   saveTestField({questions:t.questions});
   renderEditor()
 }
@@ -1154,6 +1206,13 @@ function updOpt(qi,oi,v){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
   t.questions[qi].options[oi]=v;
+  saveTestField({questions:t.questions})
+}
+
+function updExplanation(qi,v){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  if(!t)return;
+  t.questions[qi].explanation=v;
   saveTestField({questions:t.questions})
 }
 
@@ -1249,9 +1308,6 @@ function removeQImage(qi){
   renderEditor()
 }
 
-/* ============================================================
-   СТАРТ
-   ============================================================ */
 initApp();
 </script>
 </body>
