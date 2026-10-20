@@ -86,12 +86,14 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 .img-preview{max-width:100%;max-height:150px;border-radius:6px;margin-top:8px;border:1px solid #e2e8f0}
 .img-buttons{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .guest-banner{background:#dcfce7;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.92em}
-#loading{position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:2000;font-size:1.1em;color:#0090db;font-weight:600}
+#loading{position:fixed;inset:0;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;z-index:2000;font-size:1.1em;color:#0090db;font-weight:600}
+#loading .spin{width:32px;height:32px;border:3px solid #cbd5e1;border-top-color:#00AAFF;border-radius:50%;animation:sp 1s linear infinite;margin-right:12px}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<div id="loading">⏳ Загрузка данных...</div>
+<div id="loading"><div class="spin"></div><span id="loadingText">Загрузка...</span></div>
 
 <div id="authScreen" class="auth-container hidden">
   <h1>🧪 Тесты Авито</h1>
@@ -242,25 +244,22 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
     <div class="form-row"><label>или файл с диска</label><input type="file" id="imgFileInput" accept="image/*" onchange="loadImageFile(event)"></div>
     <div id="imgPreviewWrap"></div>
     <div class="toolbar" style="justify-content:flex-end">
-      <button class="secondary" onclick="clearImage">Убрать картинку</button>
+      <button class="secondary" onclick="clearImage()">Убрать картинку</button>
       <button class="secondary" onclick="closeImageModal()">Отмена</button>
       <button onclick="saveImage()">Применить</button>
     </div>
   </div>
 </div>
 
-<script type="module">
-/* ============================================================
-   FIREBASE ИНИЦИАЛИЗАЦИЯ
-   ============================================================ */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore, collection, doc,
-  getDocs, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
-  query, where
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<!-- Firebase SDK (глобальный объект window.firebase) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-const firebaseConfig = {
+<script>
+/* ============================================================
+   FIREBASE ИНИЦИАЛИЗАЦИЯ (compat-версия, глобальный firebase)
+   ============================================================ */
+var firebaseConfig = {
   apiKey: "AIzaSyCPWPw6-SeO9_4Nwt1ZmwxcGRI5dnucir4",
   authDomain: "avito-tests.firebaseapp.com",
   projectId: "avito-tests",
@@ -270,18 +269,13 @@ const firebaseConfig = {
   measurementId: "G-WPJ06LT324"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
 
 /* ============================================================
-   КЭШ ДАННЫХ В ПАМЯТИ
-   (чтобы не переписывать весь код под async)
+   КЭШ В ПАМЯТИ
    ============================================================ */
-var CACHE = {
-  users: [],
-  tests: [],
-  history: []
-};
+var CACHE = { users: [], tests: [], history: [] };
 
 /* ============================================================
    УТИЛИТЫ
@@ -310,36 +304,44 @@ function hideLoading(){
 }
 function showLoading(txt){
   var l=document.getElementById('loading');
-  if(l){l.classList.remove('hidden');l.textContent='⏳ '+(txt||'Загрузка...')}
+  var t=document.getElementById('loadingText');
+  if(l)l.classList.remove('hidden');
+  if(t)t.textContent=txt||'Загрузка...'
 }
 
 /* ============================================================
-   ЗАГРУЗКА ВСЕХ ДАННЫХ ИЗ FIRESTORE
+   ЗАГРУЗКА ДАННЫХ ИЗ FIRESTORE
    ============================================================ */
-async function loadAllData(){
+function loadAllData(){
   showLoading('Загрузка пользователей...');
-  try {
-    var uSnap = await getDocs(collection(db, 'users'));
-    CACHE.users = uSnap.docs.map(function(d){ return Object.assign({_id:d.id}, d.data()); });
-  } catch(e) { console.error('users:', e); CACHE.users = []; }
-
-  showLoading('Загрузка тестов...');
-  try {
-    var tSnap = await getDocs(collection(db, 'tests'));
-    CACHE.tests = tSnap.docs.map(function(d){ return Object.assign({_id:d.id}, d.data()); });
-  } catch(e) { console.error('tests:', e); CACHE.tests = []; }
-
-  showLoading('Загрузка истории...');
-  try {
-    var hSnap = await getDocs(collection(db, 'history'));
-    CACHE.history = hSnap.docs.map(function(d){ return Object.assign({_id:d.id}, d.data()); });
-  } catch(e) { console.error('history:', e); CACHE.history = []; }
+  return db.collection('users').get().then(function(snap){
+    CACHE.users = snap.docs.map(function(d){
+      return Object.assign({_id:d.id}, d.data())
+    });
+    showLoading('Загрузка тестов...');
+    return db.collection('tests').get()
+  }).then(function(snap){
+    CACHE.tests = snap.docs.map(function(d){
+      return Object.assign({_id:d.id}, d.data())
+    });
+    showLoading('Загрузка истории...');
+    return db.collection('history').get()
+  }).then(function(snap){
+    CACHE.history = snap.docs.map(function(d){
+      return Object.assign({_id:d.id}, d.data())
+    })
+  }).catch(function(e){
+    console.error('Ошибка загрузки:', e);
+    throw e
+  })
 }
 
 /* ============================================================
    СОЗДАНИЕ АДМИНА И ДЕМО-ТЕСТОВ ПРИ ПЕРВОМ ЗАПУСКЕ
    ============================================================ */
-async function ensureAdminAndDemos(){
+function ensureAdminAndDemos(){
+  var promises = [];
+
   if(CACHE.users.length === 0){
     var adminId = genId();
     var admin = {
@@ -348,10 +350,16 @@ async function ensureAdminAndDemos(){
       role: 'admin',
       createdAt: new Date().toISOString()
     };
-    await setDoc(doc(db, 'users', adminId), admin);
-    CACHE.users.push(Object.assign({_id:adminId}, admin));
+    promises.push(
+      db.collection('users').doc(adminId).set(admin).then(function(){
+        CACHE.users.push(Object.assign({_id:adminId}, admin))
+      })
+    )
   }
+
   if(CACHE.tests.length === 0){
+    var d1Id = genId();
+    var d2Id = genId();
     var demo1 = {
       name: 'Демо: общие знания',
       questions: [
@@ -366,23 +374,27 @@ async function ensureAdminAndDemos(){
         {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:''}
       ]
     };
-    var d1Id = genId(); var d2Id = genId();
-    await setDoc(doc(db,'tests',d1Id), demo1);
-    await setDoc(doc(db,'tests',d2Id), demo2);
-    CACHE.tests.push(Object.assign({_id:d1Id}, demo1));
-    CACHE.tests.push(Object.assign({_id:d2Id}, demo2));
+    promises.push(
+      db.collection('tests').doc(d1Id).set(demo1).then(function(){
+        CACHE.tests.push(Object.assign({_id:d1Id}, demo1))
+      })
+    );
+    promises.push(
+      db.collection('tests').doc(d2Id).set(demo2).then(function(){
+        CACHE.tests.push(Object.assign({_id:d2Id}, demo2))
+      })
+    )
   }
+
+  return Promise.all(promises)
 }
 
-/* ============================================================
-   ГЕТТЕРЫ (заменяют старые localStorage-функции)
-   ============================================================ */
-function getUsers(){ return CACHE.users.slice(); }
-function getTests(){ return CACHE.tests.slice(); }
-function getHistory(){ return CACHE.history.slice(); }
+function getUsers(){ return CACHE.users.slice() }
+function getTests(){ return CACHE.tests.slice() }
+function getHistory(){ return CACHE.history.slice() }
 
 /* ============================================================
-   СЕССИЯ (localStorage — только сессия текущего браузера)
+   СЕССИЯ (localStorage — только текущий браузер)
    ============================================================ */
 var SESSION_KEY = 't_session_v2';
 function getSession(){
@@ -395,32 +407,34 @@ function setSession(s){
 /* ============================================================
    ИНИЦИАЛИЗАЦИЯ
    ============================================================ */
-async function initApp(){
-  try {
-    await loadAllData();
-    await ensureAdminAndDemos();
-  } catch(e) {
+function initApp(){
+  loadAllData().then(function(){
+    return ensureAdminAndDemos()
+  }).then(function(){
+    hideLoading();
+    var s = getSession();
+    if(s){
+      if(s.type==='guest'){
+        enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});
+        return
+      }
+      var u = CACHE.users.find(function(x){return x.login===s.login});
+      if(u){enterApp(u);return}
+      setSession(null)
+    }
+    showAuthScreen()
+  }).catch(function(e){
     hideLoading();
     document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#dc2626;font-family:system-ui">'+
-      '<h2>Ошибка подключения к базе данных</h2>'+
-      '<p>'+esc(e.message)+'</p>'+
-      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте, что в Firebase Firestore Database создана и правила разрешают чтение/запись.</p>'+
-      '</div>';
-    return;
-  }
-  hideLoading();
-
-  var s = getSession();
-  if(s){
-    if(s.type==='guest'){
-      enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});
-      return
-    }
-    var u = CACHE.users.find(function(x){return x.login===s.login});
-    if(u){enterApp(u);return}
-    setSession(null)
-  }
-  showAuthScreen()
+      '<h2>Ошибка подключения к Firebase</h2>'+
+      '<p style="font-size:.95em;background:#fef2f2;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
+      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте:</p>'+
+      '<ul style="display:inline-block;text-align:left;color:#64748b;font-size:.9em">'+
+        '<li>Firestore Database создана в Firebase Console</li>'+
+        '<li>Правила (Rules) опубликованы: <code>allow read, write: if true;</code></li>'+
+        '<li>Сайт открыт по http:// или https:// (не file://)</li>'+
+      '</ul></div>';
+  })
 }
 
 function showAuthScreen(){
@@ -435,14 +449,17 @@ function showAuthScreen(){
 }
 
 function switchAuthTab(name){
-  document.querySelectorAll('.auth-tab').forEach(function(t){t.classList.toggle('active',t.dataset.authtab===name)});
+  document.querySelectorAll('.auth-tab').forEach(function(t){
+    t.classList.toggle('active',t.dataset.authtab===name)
+  });
   document.getElementById('loginForm').classList.toggle('hidden',name!=='login');
   document.getElementById('registerForm').classList.toggle('hidden',name!=='register');
   document.getElementById('guestForm').classList.toggle('hidden',name!=='guest');
-  var m=document.getElementById('authMsg');m.className='';m.textContent=''
+  var m=document.getElementById('authMsg');
+  m.className='';m.textContent=''
 }
 
-async function handleLogin(e){
+function handleLogin(e){
   e.preventDefault();
   var login=document.getElementById('loginUser').value.trim();
   var pass=document.getElementById('loginPass').value;
@@ -454,30 +471,29 @@ async function handleLogin(e){
   enterApp(u)
 }
 
-async function handleRegister(e){
+function handleRegister(e){
   e.preventDefault();
   var login=document.getElementById('regUser').value.trim();
   var pass=document.getElementById('regPass').value;
   var pass2=document.getElementById('regPass2').value;
-  if(login.length<3){showMsg('authMsg','err','Логин минимум 3');return}
-  if(pass.length<4){showMsg('authMsg','err','Пароль минимум 4');return}
+  if(login.length<3){showMsg('authMsg','err','Логин минимум 3 символа');return}
+  if(pass.length<4){showMsg('authMsg','err','Пароль минимум 4 символа');return}
   if(pass!==pass2){showMsg('authMsg','err','Пароли не совпадают');return}
   if(CACHE.users.some(function(x){return x.login.toLowerCase()===login.toLowerCase()})){
-    showMsg('authMsg','err','Логин занят');return
+    showMsg('authMsg','err','Логин уже занят');return
   }
   var id=genId();
   var nu={login:login,passHash:hashPass(pass),role:'user',createdAt:new Date().toISOString()};
-  try{
-    await setDoc(doc(db,'users',id), nu);
-  } catch(err){
-    showMsg('authMsg','err','Ошибка сохранения: '+err.message);return
-  }
-  CACHE.users.push(Object.assign({_id:id}, nu));
-  setSession({type:'user',login:nu.login});
-  document.getElementById('regUser').value='';
-  document.getElementById('regPass').value='';
-  document.getElementById('regPass2').value='';
-  enterApp(Object.assign({_id:id}, nu))
+  db.collection('users').doc(id).set(nu).then(function(){
+    CACHE.users.push(Object.assign({_id:id}, nu));
+    setSession({type:'user',login:nu.login});
+    document.getElementById('regUser').value='';
+    document.getElementById('regPass').value='';
+    document.getElementById('regPass2').value='';
+    enterApp(Object.assign({_id:id}, nu))
+  }).catch(function(err){
+    showMsg('authMsg','err','Ошибка: '+err.message)
+  })
 }
 
 function handleGuest(e){
@@ -489,8 +505,14 @@ function handleGuest(e){
   enterApp({login:fio,role:'guest',fio:fio,isGuest:true})
 }
 
-function logout(){setSession(null);currentUser=null;showAuthScreen()}
-var currentUser=null;var currentTest=null;
+function logout(){
+  setSession(null);
+  currentUser=null;
+  showAuthScreen()
+}
+
+var currentUser=null;
+var currentTest=null;
 
 function enterApp(u){
   currentUser=u;
@@ -513,14 +535,18 @@ function enterApp(u){
     gb.classList.add('hidden')
   }
 
-  document.querySelectorAll('.admin-only').forEach(function(el){el.classList.toggle('hidden',u.role!=='admin')});
+  document.querySelectorAll('.admin-only').forEach(function(el){
+    el.classList.toggle('hidden',u.role!=='admin')
+  });
   switchTab('tests')
 }
 
 function switchTab(name){
   var adminOnly=['results','users','editor'];
   if(adminOnly.indexOf(name)!==-1 && (!currentUser||currentUser.role!=='admin'))name='tests';
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===name)});
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.classList.toggle('active',t.dataset.tab===name)
+  });
   ['tests','results','users','editor'].forEach(function(n){
     var el=document.getElementById('tab-'+n);
     if(el)el.classList.toggle('hidden',n!==name)
@@ -541,7 +567,10 @@ function renderTests(){
   document.getElementById('finishView').classList.add('hidden');
   var tests=getTests();
   var list=document.getElementById('testsList');
-  if(!tests.length){list.innerHTML='<div class="empty-state">📭 Тестов пока нет</div>';return}
+  if(!tests.length){
+    list.innerHTML='<div class="empty-state">📭 Тестов пока нет</div>';
+    return
+  }
   var isAdmin=currentUser.role==='admin';
   list.innerHTML=tests.map(function(t){
     var qn=(t.questions||[]).length;
@@ -634,12 +663,14 @@ function checkAnswer(){
   var rb=document.getElementById('resultBox');
   if(ok){
     qStats[cur].solved=true;
-    rb.className='result ok';rb.textContent='✅ Верно! Попыток: '+qStats[cur].attempts;
+    rb.className='result ok';
+    rb.textContent='✅ Верно! Попыток: '+qStats[cur].attempts;
     document.getElementById('checkBtn').classList.add('hidden');
     var nb=document.getElementById('nextBtn');nb.classList.remove('hidden');
     nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   } else {
-    rb.className='result fail';rb.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Ещё раз.';
+    rb.className='result fail';
+    rb.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Ещё раз.';
     setTimeout(function(){
       chk=false;
       document.querySelectorAll('.option').forEach(function(el){el.classList.remove('correct','wrong')});
@@ -656,7 +687,7 @@ function nextQuestion(){
   else finishTest()
 }
 
-async function finishTest(){
+function finishTest(){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.remove('hidden');
   var tot=qStats.reduce(function(s,q){return s+q.attempts},0);
@@ -683,13 +714,12 @@ async function finishTest(){
     elapsed:el
   };
   var id = genId();
-  try {
-    await setDoc(doc(db,'history',id), rec);
-    CACHE.history.unshift(Object.assign({_id:id}, rec));
-  } catch(e){
+  db.collection('history').doc(id).set(rec).then(function(){
+    CACHE.history.unshift(Object.assign({_id:id}, rec))
+  }).catch(function(e){
     console.error('Не удалось сохранить результат:', e);
     alert('Результат не сохранён в облако: '+e.message)
-  }
+  })
 }
 /* ============================================================
    СМЕНА ПАРОЛЯ (только admin)
@@ -705,7 +735,7 @@ function openChangePassModal(){
 function closeChangePassModal(){
   document.getElementById('changePassModal').classList.add('hidden')
 }
-async function submitChangePass(){
+function submitChangePass(){
   var oldP=document.getElementById('chOldPass').value;
   var newP=document.getElementById('chNewPass').value;
   var newP2=document.getElementById('chNewPass2').value;
@@ -717,14 +747,13 @@ async function submitChangePass(){
   if(u.passHash!==hashPass(oldP)){msg.textContent='Текущий пароль неверный';return}
   if(newP.length<4){msg.textContent='Новый пароль — минимум 4 символа';return}
   if(newP!==newP2){msg.textContent='Новые пароли не совпадают';return}
-  try{
-    await updateDoc(doc(db,'users',u._id),{passHash:hashPass(newP)});
+  db.collection('users').doc(u._id).update({passHash:hashPass(newP)}).then(function(){
     u.passHash=hashPass(newP);
     closeChangePassModal();
     alert('Пароль администратора изменён')
-  } catch(e){
-    msg.textContent='Ошибка сохранения: '+e.message
-  }
+  }).catch(function(e){
+    msg.textContent='Ошибка: '+e.message
+  })
 }
 
 /* ============================================================
@@ -736,14 +765,19 @@ function renderResults(){
   var sel1=document.getElementById('resultsTestFilter');
   var cur1=sel1.value;
   sel1.innerHTML='<option value="">— выберите тест —</option>'+
-    tests.map(function(t){return '<option value="'+t._id+'"'+(t._id===cur1?' selected':'')+'>'+esc(t.name)+'</option>'}).join('');
+    tests.map(function(t){
+      return '<option value="'+t._id+'"'+(t._id===cur1?' selected':'')+'>'+esc(t.name)+'</option>'
+    }).join('');
   if(!cur1&&tests.length){cur1=tests[0]._id;sel1.value=cur1}
 
   var sel2=document.getElementById('resultsUserFilter');
   var cur2=sel2.value;
-  var users=[];h.forEach(function(r){if(r.user&&users.indexOf(r.user)===-1)users.push(r.user)});
+  var users=[];
+  h.forEach(function(r){if(r.user&&users.indexOf(r.user)===-1)users.push(r.user)});
   sel2.innerHTML='<option value="">Все</option>'+
-    users.map(function(u){return '<option value="'+esc(u)+'"'+(u===cur2?' selected':'')+'>'+esc(u)+'</option>'}).join('');
+    users.map(function(u){
+      return '<option value="'+esc(u)+'"'+(u===cur2?' selected':'')+'>'+esc(u)+'</option>'
+    }).join('');
 
   var filtered=h.filter(function(r){
     if(cur1&&r.testId!==cur1)return false;
@@ -767,7 +801,9 @@ function renderResults(){
   }
 
   var list=document.getElementById('historyList');
-  if(!filtered.length){list.innerHTML='<div class="empty-state">Пусто</div>';return}
+  if(!filtered.length){
+    list.innerHTML='<div class="empty-state">Пусто</div>';return
+  }
   list.innerHTML=filtered.map(function(r){
     var who=r.userRole==='guest'?'👤 '+esc(r.fio)+' (гость)':'👤 '+esc(r.user);
     return '<div class="history-item"><div class="history-head">'+
@@ -777,20 +813,19 @@ function renderResults(){
   }).join('')
 }
 
-async function clearTestHistory(){
+function clearTestHistory(){
   var sel1=document.getElementById('resultsTestFilter').value;
   if(!sel1){alert('Выберите тест');return}
   if(!confirm('Удалить историю по этому тесту?'))return;
   var toDelete=CACHE.history.filter(function(r){return r.testId===sel1});
-  try{
-    for(var i=0;i<toDelete.length;i++){
-      await deleteDoc(doc(db,'history',toDelete[i]._id));
-    }
+  var batch=db.batch();
+  toDelete.forEach(function(r){
+    batch.delete(db.collection('history').doc(r._id))
+  });
+  batch.commit().then(function(){
     CACHE.history=CACHE.history.filter(function(r){return r.testId!==sel1});
     renderResults()
-  } catch(e){
-    alert('Ошибка: '+e.message)
-  }
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
 /* ============================================================
@@ -816,43 +851,42 @@ function renderUsers(){
     }).join('')+'</tbody></table>'
 }
 
-async function promoteUser(login){
+function promoteUser(login){
   if(!confirm('Сделать '+login+' админом?'))return;
   var u=CACHE.users.find(function(x){return x.login===login});
   if(!u)return;
-  try{
-    await updateDoc(doc(db,'users',u._id),{role:'admin'});
+  db.collection('users').doc(u._id).update({role:'admin'}).then(function(){
     u.role='admin';renderUsers()
-  } catch(e){alert('Ошибка: '+e.message)}
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
-async function resetUserPassword(login){
+function resetUserPassword(login){
   var np=prompt('Новый пароль для «'+login+'» (минимум 4 символа):','');
   if(np===null)return;
   if(np.length<4){alert('Слишком короткий');return}
   var u=CACHE.users.find(function(x){return x.login===login});
   if(!u)return;
-  try{
-    await updateDoc(doc(db,'users',u._id),{passHash:hashPass(np)});
+  db.collection('users').doc(u._id).update({passHash:hashPass(np)}).then(function(){
     u.passHash=hashPass(np);
     alert('Пароль для «'+login+'» изменён на: '+np)
-  } catch(e){alert('Ошибка: '+e.message)}
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
-async function deleteUser(login){
+function deleteUser(login){
   if(!confirm('Удалить '+login+'?'))return;
   var u=CACHE.users.find(function(x){return x.login===login});
   if(!u)return;
-  try{
-    await deleteDoc(doc(db,'users',u._id));
+  var toDel=CACHE.history.filter(function(r){return r.user===login});
+  var batch=db.batch();
+  batch.delete(db.collection('users').doc(u._id));
+  toDel.forEach(function(r){
+    batch.delete(db.collection('history').doc(r._id))
+  });
+  batch.commit().then(function(){
     CACHE.users=CACHE.users.filter(function(x){return x.login!==login});
-    var toDel=CACHE.history.filter(function(r){return r.user===login});
-    for(var i=0;i<toDel.length;i++){
-      await deleteDoc(doc(db,'history',toDel[i]._id));
-    }
     CACHE.history=CACHE.history.filter(function(r){return r.user!==login});
     renderUsers()
-  } catch(e){alert('Ошибка: '+e.message)}
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
 /* ============================================================
@@ -860,35 +894,35 @@ async function deleteUser(login){
    ============================================================ */
 var editTestId=null;
 
-async function createTest(){
+function createTest(){
   var name=prompt('Название теста:','Новый тест');
   if(!name||!name.trim())return;
   var id=genId();
   var nt={name:name.trim(),questions:[]};
-  try{
-    await setDoc(doc(db,'tests',id), nt);
+  db.collection('tests').doc(id).set(nt).then(function(){
     CACHE.tests.push(Object.assign({_id:id}, nt));
     editTestId=id;
     switchTab('editor')
-  } catch(e){alert('Ошибка: '+e.message)}
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
 function editTest(id){editTestId=id;switchTab('editor')}
 
-async function deleteTest(id){
+function deleteTest(id){
   var t=CACHE.tests.find(function(x){return x._id===id});
   if(!t)return;
   if(!confirm('Удалить тест «'+t.name+'»? Вся история тоже удалится.'))return;
-  try{
-    await deleteDoc(doc(db,'tests',id));
+  var toDel=CACHE.history.filter(function(r){return r.testId===id});
+  var batch=db.batch();
+  batch.delete(db.collection('tests').doc(id));
+  toDel.forEach(function(r){
+    batch.delete(db.collection('history').doc(r._id))
+  });
+  batch.commit().then(function(){
     CACHE.tests=CACHE.tests.filter(function(x){return x._id!==id});
-    var toDel=CACHE.history.filter(function(r){return r.testId===id});
-    for(var i=0;i<toDel.length;i++){
-      await deleteDoc(doc(db,'history',toDel[i]._id));
-    }
     CACHE.history=CACHE.history.filter(function(r){return r.testId!==id});
     renderTests()
-  } catch(e){alert('Ошибка: '+e.message)}
+  }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
 function renderEditor(){
@@ -927,15 +961,12 @@ function renderEditor(){
   }).join('')
 }
 
-/* --- Сохранение изменений в редакторе (автоматически в Firestore) --- */
-async function saveTestField(updates){
+function saveTestField(updates){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
-  try{
-    await updateDoc(doc(db,'tests',editTestId), updates);
-  } catch(e){
+  db.collection('tests').doc(editTestId).update(updates).catch(function(e){
     showMsg('editorMsg','err','Ошибка: '+e.message)
-  }
+  })
 }
 
 function updateTestName(v){
@@ -1025,7 +1056,7 @@ function closeImageModal(){
 function loadImageFile(e){
   var f=e.target.files[0];if(!f)return;
   if(f.size>800*1024){
-    alert('Файл слишком большой. Firestore ограничивает размер документа 1 МБ. Используйте URL или файл до 800 КБ.');
+    alert('Файл больше 800 КБ. Firestore ограничивает документ 1 МБ. Используйте URL или меньший файл.');
     e.target.value='';return
   }
   var r=new FileReader();
