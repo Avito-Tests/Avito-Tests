@@ -111,6 +111,18 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 #loading{position:fixed;inset:0;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;z-index:2000;font-size:1.1em;color:#0090db;font-weight:600}
 #loading .spin{width:32px;height:32px;border:3px solid #cbd5e1;border-top-color:#00AAFF;border-radius:50%;animation:sp 1s linear infinite;margin-right:12px}
 @keyframes sp{to{transform:rotate(360deg)}}
+.text-answer-wrap{margin-top:10px}
+.text-answer-input{width:100%;padding:12px 16px;font-size:1em;font-family:inherit;border:2px solid #ddd;border-radius:10px;background:#fff;transition:border-color .15s;resize:vertical;min-height:50px}
+.text-answer-input:focus{outline:none;border-color:#00AAFF;background:#eff9ff}
+.text-answer-input.correct{border-color:#16a34a;background:#f0fdf4}
+.text-answer-input.wrong{border-color:#dc2626;background:#fef2f2}
+.text-answer-input:disabled{opacity:.7;cursor:not-allowed}
+.q-type-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:8px}
+.q-type-choice{background:#dbeafe;color:#1e40af}
+.q-type-text{background:#fef3c7;color:#92400e}
+.editor-type-tabs{display:flex;gap:4px;margin-bottom:10px;background:#f1f5f9;padding:4px;border-radius:8px}
+.editor-type-tab{flex:1;padding:8px 12px;background:none;color:#64748b;border-radius:6px;font-weight:600;font-size:.88em;border:none;cursor:pointer}
+.editor-type-tab.active{background:#fff;color:#00AAFF;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 </style>
 </head>
 <body>
@@ -354,12 +366,12 @@ function ensureAdminAndDemos(){
   if(CACHE.tests.length === 0){
     var d1Id=genId(), d2Id=genId();
     var d1={name:'Демо: общие знания',questions:[
-      {question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
-      {question:'7 × 8 = ?',options:['54','56','48','64'],correct:1,image:'',explanation:'7 × 8 = 56. Табличное умножение.',explanationImage:''}
+      {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
+      {type:'text',question:'Сколько будет 7 × 8? (введите число)',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56. Табличное умножение.',explanationImage:''}
     ]};
     var d2={name:'Демо: Авито',questions:[
-      {question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,image:'',explanation:'Авито — крупнейшая в России доска объявлений.',explanationImage:''},
-      {question:'Основной цвет Авито?',options:['Красный','Синий','Зелёный','Жёлтый'],correct:1,image:'',explanation:'Фирменный цвет Авито — синий.',explanationImage:''}
+      {type:'choice',question:'Что такое Авито?',options:['Соцсеть','Доска объявлений','Мессенджер','Банк'],correct:1,correctText:'',image:'',explanation:'Авито — крупнейшая в России доска объявлений.',explanationImage:''},
+      {type:'text',question:'Основной цвет Авито? (введите слово)',options:[],correct:0,correctText:'синий|голубой',image:'',explanation:'Фирменный цвет Авито — синий.',explanationImage:''}
     ]};
     promises.push(db.collection('tests').doc(d1Id).set(d1).then(function(){
       CACHE.tests.push(Object.assign({_id:d1Id}, d1))
@@ -567,7 +579,7 @@ function openTestStart(id){
 }
 
 /* ============================================================
-   ПРОХОЖДЕНИЕ
+   ПРОХОЖДЕНИЕ — два типа вопросов
    ============================================================ */
 var cur=0;
 var chk=false;
@@ -593,12 +605,16 @@ function renderQ(){
   chk=false;
   var q=currentTest.questions[cur];
   var sel=currentSel[cur];
+  var qtype=q.type||'choice';
 
   document.getElementById('progress').textContent =
     'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts+
     (qStats[cur].solved?' • ✅ решён':'');
 
-  document.getElementById('questionText').textContent=q.question||'(без текста)';
+  var typeBadge = qtype==='text'
+    ? ' <span class="q-type-badge q-type-text">✍️ письменный</span>'
+    : ' <span class="q-type-badge q-type-choice">📋 выбор</span>';
+  document.getElementById('questionText').innerHTML = esc(q.question||'(без текста)') + typeBadge;
 
   var iw=document.getElementById('questionImageWrap');
   if(q.image&&q.image.trim()){
@@ -613,25 +629,57 @@ function renderQ(){
   var solvedQ = qStats[cur].solved;
   var opts=document.getElementById('options');
   opts.innerHTML='';
-  q.options.forEach(function(text,i){
-    var div=document.createElement('div');
-    div.className='option';
-    div.dataset.i=i;
-    div.dataset.letter=letterOf(i);
-    div.innerHTML='<span>'+esc(text||('Вариант '+(i+1)))+'</span>';
 
+  if(qtype==='choice'){
+    // === ВЫБОР ВАРИАНТА ===
+    (q.options||[]).forEach(function(text,i){
+      var div=document.createElement('div');
+      div.className='option';
+      div.dataset.i=i;
+      div.dataset.letter=letterOf(i);
+      div.innerHTML='<span>'+esc(text||('Вариант '+(i+1)))+'</span>';
+      if(solvedQ){
+        div.classList.add('disabled');
+        if(i===q.correct)div.classList.add('correct');
+        else if(i===sel)div.classList.add('wrong');
+      } else {
+        if(i===sel)div.classList.add('selected');
+        div.onclick=(function(idx){
+          return function(){pickOption(idx)}
+        })(i);
+      }
+      opts.appendChild(div)
+    });
+  } else {
+    // === ПИСЬМЕННЫЙ ОТВЕТ ===
+    var wrap=document.createElement('div');
+    wrap.className='text-answer-wrap';
+    var inp=document.createElement('textarea');
+    inp.className='text-answer-input';
+    inp.id='textAnswerInput';
+    inp.placeholder='Введите ваш ответ...';
+    inp.value=(sel||'');
     if(solvedQ){
-      div.classList.add('disabled');
-      if(i===q.correct)div.classList.add('correct');
-      else if(i===sel)div.classList.add('wrong');
+      inp.disabled=true;
+      inp.classList.add('correct');
+      var correctBox=document.createElement('div');
+      correctBox.style.marginTop='10px';
+      correctBox.style.padding='10px 14px';
+      correctBox.style.background='#f0fdf4';
+      correctBox.style.border='1px solid #16a34a';
+      correctBox.style.borderRadius='8px';
+      correctBox.style.fontSize='.92em';
+      correctBox.innerHTML='<b style="color:#166534">✓ Правильный ответ:</b> '+esc(q.correctText||'');
+      wrap.appendChild(inp);
+      wrap.appendChild(correctBox);
     } else {
-      if(i===sel)div.classList.add('selected');
-      div.onclick=(function(idx){
-        return function(){pickOption(idx)}
-      })(i);
+      inp.oninput=function(){
+        currentSel[cur]=inp.value;
+      };
+      wrap.appendChild(inp);
     }
-    opts.appendChild(div)
-  });
+    opts.appendChild(wrap);
+  }
 
   var prevBtn=document.getElementById('prevBtn');
   prevBtn.classList.toggle('hidden',cur===0);
@@ -659,53 +707,108 @@ function pickOption(i){
   })
 }
 
+function checkTextAnswer(userText, correctText){
+  if(!userText||!correctText)return false;
+  var u=String(userText).trim().toLowerCase().replace(/\s+/g,' ');
+  var c=String(correctText).trim().toLowerCase().replace(/\s+/g,' ');
+  if(u===c)return true;
+  var variants=c.split('|').map(function(v){return v.trim()});
+  return variants.indexOf(u)!==-1
+}
+
 function checkAnswer(){
-  if(currentSel[cur]===null){
-    var r=document.getElementById('resultBox');
-    r.innerHTML='⚠️ Выберите вариант';r.className='result fail';return
-  }
-  chk=true;
-  var chosen=currentSel[cur];
-  qStats[cur].attempts++;
-  qStats[cur].choices.push(chosen);
-  if(qStats[cur].firstChoice===null)qStats[cur].firstChoice=chosen;
-
   var q=currentTest.questions[cur];
-  var ok=chosen===q.correct;
+  var qtype=q.type||'choice';
 
-  if(ok){
-    document.querySelectorAll('.option').forEach(function(el,i){
-      el.classList.remove('selected','wrong');
-      if(i===q.correct)el.classList.add('correct');
-    });
-    qStats[cur].solved=true;
-    var rb=document.getElementById('resultBox');
-    rb.className='result ok';
-    rb.textContent='✅ Верно! Попыток на вопрос: '+qStats[cur].attempts;
-    document.getElementById('checkBtn').classList.add('hidden');
-    var nb=document.getElementById('nextBtn');
-    nb.classList.remove('hidden');
-    nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
-  } else {
-    document.querySelectorAll('.option').forEach(function(el,i){
-      el.classList.remove('selected','correct');
-      if(i===chosen)el.classList.add('wrong');
-    });
-    var rb2=document.getElementById('resultBox');
-    rb2.className='result fail';
-    rb2.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой вариант.';
-    setTimeout(function(){
-      chk=false;
+  if(qtype==='choice'){
+    if(currentSel[cur]===null){
+      var r=document.getElementById('resultBox');
+      r.innerHTML='⚠️ Выберите вариант';r.className='result fail';return
+    }
+    chk=true;
+    var chosen=currentSel[cur];
+    qStats[cur].attempts++;
+    qStats[cur].choices.push(chosen);
+    if(qStats[cur].firstChoice===null)qStats[cur].firstChoice=chosen;
+
+    var ok=chosen===q.correct;
+
+    if(ok){
       document.querySelectorAll('.option').forEach(function(el,i){
-        el.classList.remove('correct','wrong');
-        if(i===currentSel[cur])el.classList.add('selected');
-        el.onclick=(function(idx){
-          return function(){pickOption(idx)}
-        })(i);
+        el.classList.remove('selected','wrong');
+        if(i===q.correct)el.classList.add('correct');
       });
-      document.getElementById('checkBtn').disabled=false
-    },1200)
+      qStats[cur].solved=true;
+      var rb=document.getElementById('resultBox');
+      rb.className='result ok';
+      rb.textContent='✅ Верно! Попыток на вопрос: '+qStats[cur].attempts;
+      document.getElementById('checkBtn').classList.add('hidden');
+      var nb=document.getElementById('nextBtn');
+      nb.classList.remove('hidden');
+      nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
+    } else {
+      document.querySelectorAll('.option').forEach(function(el,i){
+        el.classList.remove('selected','correct');
+        if(i===chosen)el.classList.add('wrong');
+      });
+      var rb2=document.getElementById('resultBox');
+      rb2.className='result fail';
+      rb2.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой вариант.';
+      setTimeout(function(){
+        chk=false;
+        document.querySelectorAll('.option').forEach(function(el,i){
+          el.classList.remove('correct','wrong');
+          if(i===currentSel[cur])el.classList.add('selected');
+          el.onclick=(function(idx){
+            return function(){pickOption(idx)}
+          })(i);
+        });
+        document.getElementById('checkBtn').disabled=false
+      },1200)
+    }
+  } else {
+    // Письменный
+    var inp=document.getElementById('textAnswerInput');
+    var userText=inp?inp.value.trim():'';
+    if(!userText){
+      var r2=document.getElementById('resultBox');
+      r2.innerHTML='⚠️ Введите ответ';r2.className='result fail';return
+    }
+    chk=true;
+    qStats[cur].attempts++;
+    qStats[cur].choices.push(userText);
+    if(qStats[cur].firstChoice===null)qStats[cur].firstChoice=userText;
+
+    var okText=checkTextAnswer(userText,q.correctText);
+
+    if(okText){
+      inp.classList.remove('wrong');
+      inp.classList.add('correct');
+      inp.disabled=true;
+      qStats[cur].solved=true;
+      var rb3=document.getElementById('resultBox');
+      rb3.className='result ok';
+      rb3.textContent='✅ Верно! Попыток на вопрос: '+qStats[cur].attempts;
+      document.getElementById('checkBtn').classList.add('hidden');
+      var nb2=document.getElementById('nextBtn');
+      nb2.classList.remove('hidden');
+      nb2.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
+    } else {
+      inp.classList.remove('correct');
+      inp.classList.add('wrong');
+      var rb4=document.getElementById('resultBox');
+      rb4.className='result fail';
+      rb4.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой ответ.';
+      setTimeout(function(){
+        chk=false;
+        inp.classList.remove('wrong');
+        inp.disabled=false;
+        inp.focus();
+        document.getElementById('checkBtn').disabled=false
+      },1200)
+    }
   }
+
   document.getElementById('progress').textContent =
     'Вопрос '+(cur+1)+' из '+currentTest.questions.length+' • Попыток: '+qStats[cur].attempts+
     (qStats[cur].solved?' • ✅ решён':'')
@@ -735,87 +838,103 @@ function finishTest(){
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
   var reviewHtml = currentTest.questions.map(function(q,i){
-    var st = qStats[i];
-    var optsHtml = q.options.map(function(opt, oi){
-      var cls='q-review-opt';
-      if(oi===q.correct)cls+=' correct';
-      if(st.choices.indexOf(oi)!==-1 && oi!==q.correct)cls+=' chosen wrong';
-      else if(st.choices.indexOf(oi)!==-1)cls+=' chosen';
-      var marks=[];
-      if(oi===q.correct)marks.push('✓ правильный');
-      if(st.choices.indexOf(oi)!==-1)marks.push('👈 вы выбирали');
-      return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
-    }).join('');
+    var st=qStats[i];
+    var qtype=q.type||'choice';
+    var contentHtml='';
 
-    var imgHtml = q.image && q.image.trim()
+    if(qtype==='choice'){
+      var optsHtml=(q.options||[]).map(function(opt,oi){
+        var cls='q-review-opt';
+        if(oi===q.correct)cls+=' correct';
+        if(st.choices.indexOf(oi)!==-1 && oi!==q.correct)cls+=' chosen wrong';
+        else if(st.choices.indexOf(oi)!==-1)cls+=' chosen';
+        var marks=[];
+        if(oi===q.correct)marks.push('✓ правильный');
+        if(st.choices.indexOf(oi)!==-1)marks.push('👈 вы выбирали');
+        return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
+      }).join('');
+      contentHtml='<div class="q-review-opts">'+optsHtml+'</div>';
+    } else {
+      var attemptStr=st.choices.map(function(c,idx){
+        var okOne=checkTextAnswer(c,q.correctText);
+        return '<div class="attempt-log-row">Попытка '+(idx+1)+': <code style="background:#fff;padding:1px 6px;border-radius:4px">'+esc(c)+'</code> '+
+          (okOne?'<span style="color:#16a34a">✓</span>':'<span style="color:#dc2626">✕</span>')+'</div>'
+      }).join('');
+      contentHtml='<div class="q-review-opts">'+
+        '<div class="q-review-opt correct"><b>✓ Правильный ответ:</b> '+esc(q.correctText||'')+'</div>'+
+        (attemptStr?'<div class="attempt-log" style="margin-top:8px"><b>Ваши ответы:</b>'+attemptStr+'</div>':'')+
+      '</div>';
+    }
+
+    var imgHtml=q.image&&q.image.trim()
       ? '<img class="q-image" src="'+esc(q.image)+'" style="max-height:200px;margin-bottom:8px" onerror="this.style.display=\'none\'">'
       : '';
 
-    var hasExpl = (q.explanation && q.explanation.trim()) || (q.explanationImage && q.explanationImage.trim());
-    var explHtml = hasExpl
+    var hasExpl=(q.explanation&&q.explanation.trim())||(q.explanationImage&&q.explanationImage.trim());
+    var explHtml=hasExpl
       ? '<div class="explanation">'+
           '<div class="explanation-title">💡 Пояснение</div>'+
-          (q.explanation ? '<div>'+esc(q.explanation)+'</div>' : '')+
-          (q.explanationImage ? '<img class="explanation-image" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">' : '')+
+          (q.explanation?'<div>'+esc(q.explanation)+'</div>':'')+
+          (q.explanationImage?'<img class="explanation-image" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
         '</div>'
       : '';
 
+    var typeBadge=qtype==='text'
+      ? ' <span class="q-type-badge q-type-text">✍️</span>'
+      : ' <span class="q-type-badge q-type-choice">📋</span>';
+
     return '<div class="q-review">'+
-      '<div class="q-review-title">'+(i+1)+'. '+esc(q.question||'(без текста)')+
+      '<div class="q-review-title">'+(i+1)+'. '+esc(q.question||'(без текста)')+typeBadge+
         (st.solved?' <span style="color:#16a34a">✅</span>':' <span style="color:#dc2626">❌</span>')+
       '</div>'+
       imgHtml+
-      '<div class="q-review-opts">'+optsHtml+'</div>'+
+      contentHtml+
       explHtml+
-      '<div class="q-review-meta">'+
-        'Попыток: '+st.attempts+
-        (st.firstChoice!==null?' • Первый выбор: '+letterOf(st.firstChoice):'')+
-      '</div>'+
+      '<div class="q-review-meta">Попыток: '+st.attempts+'</div>'+
     '</div>'
   }).join('');
 
   document.getElementById('finalReview').innerHTML = '<h3>📝 Разбор ответов</h3>' + reviewHtml;
 
   var details = currentTest.questions.map(function(q,i){
-    var choices = qStats[i].choices.slice();
-    var attemptLog = choices.map(function(chosenIdx, idx){
-      return {
-        attempt: idx + 1,
-        chosen: chosenIdx,
-        isCorrect: chosenIdx === q.correct
-      }
+    var choices=qStats[i].choices.slice();
+    var attemptLog=choices.map(function(chosen,idx){
+      var isCorrect = (q.type==='text') ? checkTextAnswer(chosen,q.correctText) : (chosen===q.correct);
+      return {attempt:idx+1,chosen:chosen,isCorrect:isCorrect}
     });
     return {
-      question: q.question,
-      options: q.options,
-      correct: q.correct,
-      explanation: q.explanation || '',
-      explanationImage: q.explanationImage || '',
-      image: q.image || '',
-      attempts: qStats[i].attempts,
-      solved: qStats[i].solved,
-      choices: choices,
-      firstChoice: qStats[i].firstChoice,
-      attemptLog: attemptLog
+      type:q.type||'choice',
+      question:q.question,
+      options:q.options||[],
+      correct:q.correct,
+      correctText:q.correctText||'',
+      explanation:q.explanation||'',
+      explanationImage:q.explanationImage||'',
+      image:q.image||'',
+      attempts:qStats[i].attempts,
+      solved:qStats[i].solved,
+      choices:choices,
+      firstChoice:qStats[i].firstChoice,
+      attemptLog:attemptLog
     }
   });
 
-  var rec = {
-    testId: currentTest._id,
-    testName: currentTest.name,
-    user: currentUser.login,
-    userRole: currentUser.role,
-    fio: currentUser.role==='guest'?currentUser.fio:null,
-    date: new Date().toLocaleString('ru-RU'),
-    timestamp: Date.now(),
-    questions: currentTest.questions.length,
-    totalAttempts: tot,
-    solvedFirstTry: ft,
-    elapsed: el,
-    details: details
+  var rec={
+    testId:currentTest._id,
+    testName:currentTest.name,
+    user:currentUser.login,
+    userRole:currentUser.role,
+    fio:currentUser.role==='guest'?currentUser.fio:null,
+    date:new Date().toLocaleString('ru-RU'),
+    timestamp:Date.now(),
+    questions:currentTest.questions.length,
+    totalAttempts:tot,
+    solvedFirstTry:ft,
+    elapsed:el,
+    details:details
   };
 
-  var id = genId();
+  var id=genId();
   db.collection('history').doc(id).set(rec).then(function(){
     CACHE.history.unshift(Object.assign({_id:id}, rec))
   }).catch(function(e){
@@ -933,54 +1052,56 @@ function buildHistoryDetailHTML(r){
     return '<p style="color:#94a3b8">Детали недоступны (запись старая)</p>'
   }
   return details.map(function(d,i){
-    var optsHtml=d.options.map(function(opt,oi){
-      var cls='q-review-opt';
-      if(oi===d.correct)cls+=' correct';
-      if(d.choices&&d.choices.indexOf(oi)!==-1 && oi!==d.correct)cls+=' wrong';
-      if(d.choices&&d.choices.indexOf(oi)!==-1)cls+=' chosen';
-      var marks=[];
-      if(d.choices&&d.choices.indexOf(oi)!==-1)marks.push('👈 выбирал');
-      if(oi===d.correct)marks.push('✓ правильный');
-      return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
-    }).join('');
+    var qtype=d.type||'choice';
+    var contentHtml='';
 
-    var imgHtml = d.image && d.image.trim()
+    if(qtype==='choice'){
+      var optsHtml=(d.options||[]).map(function(opt,oi){
+        var cls='q-review-opt';
+        if(oi===d.correct)cls+=' correct';
+        if(d.choices&&d.choices.indexOf(oi)!==-1 && oi!==d.correct)cls+=' wrong';
+        if(d.choices&&d.choices.indexOf(oi)!==-1)cls+=' chosen';
+        var marks=[];
+        if(d.choices&&d.choices.indexOf(oi)!==-1)marks.push('👈 выбирал');
+        if(oi===d.correct)marks.push('✓ правильный');
+        return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
+      }).join('');
+      contentHtml='<div class="q-review-opts">'+optsHtml+'</div>';
+    } else {
+      var attemptStr=(d.attemptLog||[]).map(function(a){
+        var txt=d.choices[a.attempt-1];
+        return '<div class="attempt-log-row">Попытка '+a.attempt+': <code style="background:#fff;padding:1px 6px;border-radius:4px">'+esc(txt)+'</code> '+
+          (a.isCorrect?'<span style="color:#16a34a">✓</span>':'<span style="color:#dc2626">✕</span>')+'</div>'
+      }).join('');
+      contentHtml='<div class="q-review-opts">'+
+        '<div class="q-review-opt correct"><b>✓ Правильный ответ:</b> '+esc(d.correctText||'')+'</div>'+
+        (attemptStr?'<div class="attempt-log" style="margin-top:8px"><b>Все попытки:</b>'+attemptStr+'</div>':'')+
+      '</div>';
+    }
+
+    var imgHtml=d.image&&d.image.trim()
       ? '<img class="q-image" src="'+esc(d.image)+'" style="max-height:180px;margin-bottom:8px" onerror="this.style.display=\'none\'">'
       : '';
 
-    var hasExpl = (d.explanation && d.explanation.trim()) || (d.explanationImage && d.explanationImage.trim());
-    var explHtml = hasExpl
+    var hasExpl=(d.explanation&&d.explanation.trim())||(d.explanationImage&&d.explanationImage.trim());
+    var explHtml=hasExpl
       ? '<div class="explanation">'+
           '<div class="explanation-title">💡 Пояснение</div>'+
-          (d.explanation ? '<div>'+esc(d.explanation)+'</div>' : '')+
-          (d.explanationImage ? '<img class="explanation-image" src="'+esc(d.explanationImage)+'" onerror="this.style.display=\'none\'">' : '')+
+          (d.explanation?'<div>'+esc(d.explanation)+'</div>':'')+
+          (d.explanationImage?'<img class="explanation-image" src="'+esc(d.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
         '</div>'
       : '';
 
-    var logHtml='';
-    if(d.attemptLog&&d.attemptLog.length){
-      logHtml='<div class="attempt-log">'+
-        '<b>Все попытки:</b>'+
-        d.attemptLog.map(function(a){
-          return '<div class="attempt-log-row">'+
-            'Попытка '+a.attempt+': <b>'+letterOf(a.chosen)+'</b> '+
-            (a.isCorrect?'<span style="color:#16a34a">✓ верно</span>':'<span style="color:#dc2626">✕ неверно</span>')+
-          '</div>'
-        }).join('')+
-      '</div>'
-    }
+    var typeBadge=qtype==='text'
+      ? ' <span class="q-type-badge q-type-text">✍️</span>'
+      : ' <span class="q-type-badge q-type-choice">📋</span>';
 
     return '<div class="q-review">'+
-      '<div class="q-review-title">'+(i+1)+'. '+esc(d.question||'(без текста)')+'</div>'+
+      '<div class="q-review-title">'+(i+1)+'. '+esc(d.question||'(без текста)')+typeBadge+'</div>'+
       imgHtml+
-      '<div class="q-review-opts">'+optsHtml+'</div>'+
+      contentHtml+
       explHtml+
-      logHtml+
-      '<div class="q-review-meta">'+
-        'Попыток: '+d.attempts+' • '+
-        (d.solved?'✅ решён':'❌ не решён')+
-        (d.firstChoice!==null&&d.firstChoice!==undefined?' • Первый выбор: '+letterOf(d.firstChoice):'')+
-      '</div>'+
+      '<div class="q-review-meta">Попыток: '+d.attempts+' • '+(d.solved?'✅ решён':'❌ не решён')+'</div>'+
     '</div>'
   }).join('')
 }
@@ -1146,38 +1267,56 @@ function renderEditor(){
     list.innerHTML='<div class="empty-state">Нет вопросов — добавьте первый</div>';return
   }
   list.innerHTML=t.questions.map(function(q,qi){
-    var opts=q.options.map(function(opt,oi){
-      return '<div class="opt-row">'+
-        '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" title="Правильный">'+
-        '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'">'+
-        '<button class="small secondary" onclick="delOpt('+qi+','+oi+')" '+(q.options.length<=2?'disabled':'')+'>✕</button>'+
-      '</div>'
-    }).join('');
+    var qtype=q.type||'choice';
     var imgBlock=q.image&&q.image.trim()
       ?'<img class="img-preview" src="'+esc(q.image)+'" onerror="this.style.display=\'none\'">'
       :'<div style="font-size:.85em;color:#94a3b8;margin-top:4px">Картинка не прикреплена</div>';
     var explImgBlock=q.explanationImage&&q.explanationImage.trim()
       ?'<img class="img-preview" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">'
       :'<div style="font-size:.85em;color:#94a3b8;margin-top:6px">Картинка к пояснению не прикреплена</div>';
+
+    var typeSwitch='<div class="editor-type-tabs">'+
+      '<button class="editor-type-tab '+(qtype==='choice'?'active':'')+'" onclick="setQuestionType('+qi+',\'choice\')">📋 С выбором</button>'+
+      '<button class="editor-type-tab '+(qtype==='text'?'active':'')+'" onclick="setQuestionType('+qi+',\'text\')">✍️ Письменный</button>'+
+    '</div>';
+
+    var answerBlock='';
+    if(qtype==='choice'){
+      var opts=(q.options||[]).map(function(opt,oi){
+        return '<div class="opt-row">'+
+          '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" title="Правильный">'+
+          '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'">'+
+          '<button class="small secondary" onclick="delOpt('+qi+','+oi+')" '+((q.options||[]).length<=2?'disabled':'')+'>✕</button>'+
+        '</div>'
+      }).join('');
+      answerBlock='<div class="field"><label>Варианты</label>'+opts+
+        '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>';
+    } else {
+      answerBlock='<div class="field"><label>Правильный ответ (что должен ввести пользователь)</label>'+
+        '<input type="text" value="'+esc(q.correctText||'')+'" oninput="updCorrectText('+qi+',this.value)" placeholder="Например: Париж">'+
+        '<div style="font-size:.8em;color:#64748b;margin-top:4px">Можно указать несколько вариантов через <code>|</code>: <code>Париж|Paris</code></div>'+
+      '</div>';
+    }
+
     return '<div class="editor-item">'+
       '<div class="editor-item-header"><span class="num">Вопрос '+(qi+1)+'</span>'+
         '<button class="small danger" onclick="delQ('+qi+')">Удалить</button></div>'+
+      typeSwitch+
       '<div class="field"><label>Текст</label><input type="text" value="'+esc(q.question)+'" oninput="updQ('+qi+',this.value)"></div>'+
       '<div class="field"><label>Картинка вопроса</label>'+imgBlock+
         '<div class="img-buttons">'+
           '<button class="small secondary" onclick="openImageModal('+qi+')">🖼 '+(q.image?'Заменить':'Прикрепить')+'</button>'+
           (q.image?'<button class="small danger" onclick="removeQImage('+qi+')">Убрать</button>':'')+
         '</div></div>'+
+      answerBlock+
       '<div class="field"><label>💡 Пояснение (видно после прохождения)</label>'+
-        '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Почему этот ответ правильный? Что важно запомнить?" style="min-height:80px;font-size:.92em">'+esc(q.explanation||'')+'</textarea>'+
+        '<textarea oninput="updExplanation('+qi+',this.value)" placeholder="Почему этот ответ правильный?" style="min-height:80px;font-size:.92em">'+esc(q.explanation||'')+'</textarea>'+
         explImgBlock+
         '<div class="img-buttons">'+
           '<button class="small secondary" onclick="openExplanationImageModal('+qi+')">🖼 '+(q.explanationImage?'Заменить картинку':'Прикрепить картинку к пояснению')+'</button>'+
           (q.explanationImage?'<button class="small danger" onclick="removeExplanationImage('+qi+')">Убрать</button>':'')+
         '</div>'+
       '</div>'+
-      '<div class="field"><label>Варианты</label>'+opts+
-        '<button class="small secondary" onclick="addOpt('+qi+')" style="margin-top:6px">+ вариант</button></div>'+
     '</div>'
   }).join('')
 }
@@ -1201,7 +1340,32 @@ function updateTestName(v){
 function addQuestion(){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
-  t.questions.push({question:'',options:['','','',''],correct:0,image:'',explanation:'',explanationImage:''});
+  t.questions.push({
+    type:'choice',
+    question:'',
+    options:['','','',''],
+    correct:0,
+    correctText:'',
+    image:'',
+    explanation:'',
+    explanationImage:''
+  });
+  saveTestField({questions:t.questions});
+  renderEditor()
+}
+
+function setQuestionType(qi,newType){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  if(!t)return;
+  var q=t.questions[qi];
+  q.type=newType;
+  if(newType==='choice'){
+    if(!q.options||!q.options.length){q.options=['','','',''];q.correct=0}
+    if(typeof q.correct!=='number')q.correct=0
+  } else {
+    if(!q.correctText)q.correctText='';
+    if(!q.options)q.options=[]
+  }
   saveTestField({questions:t.questions});
   renderEditor()
 }
@@ -1217,6 +1381,13 @@ function updOpt(qi,oi,v){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
   t.questions[qi].options[oi]=v;
+  saveTestField({questions:t.questions})
+}
+
+function updCorrectText(qi,v){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  if(!t)return;
+  t.questions[qi].correctText=v;
   saveTestField({questions:t.questions})
 }
 
@@ -1262,46 +1433,41 @@ function delQ(qi){
 }
 
 /* ============================================================
-   КАРТИНКИ — универсальная модалка для двух режимов
-   mode: 'question' | 'explanation'
+   КАРТИНКИ — универсальная модалка
    ============================================================ */
-var imgMode = null;
-var imgTargetQ = null;
-var imgPendingData = null;
+var imgMode=null;
+var imgTargetQ=null;
+var imgPendingData=null;
 
 function openImageModal(qi){
-  imgMode = 'question';
-  imgTargetQ = qi;
-  imgPendingData = null;
-  document.getElementById('imgUrlInput').value = '';
-  document.getElementById('imgFileInput').value = '';
+  imgMode='question';
+  imgTargetQ=qi;
+  imgPendingData=null;
+  document.getElementById('imgUrlInput').value='';
+  document.getElementById('imgFileInput').value='';
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  var curImg = t ? t.questions[qi].image : '';
-  document.getElementById('imgPreviewWrap').innerHTML = curImg
-    ? '<img class="img-preview" src="'+esc(curImg)+'">' : '';
-  document.getElementById('imageModalTitle').textContent = 'Прикрепить картинку к вопросу';
+  var curImg=t?t.questions[qi].image:'';
+  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img class="img-preview" src="'+esc(curImg)+'">':'';
+  document.getElementById('imageModalTitle').textContent='Прикрепить картинку к вопросу';
   document.getElementById('imageModal').classList.remove('hidden')
 }
 
 function openExplanationImageModal(qi){
-  imgMode = 'explanation';
-  imgTargetQ = qi;
-  imgPendingData = null;
-  document.getElementById('imgUrlInput').value = '';
-  document.getElementById('imgFileInput').value = '';
+  imgMode='explanation';
+  imgTargetQ=qi;
+  imgPendingData=null;
+  document.getElementById('imgUrlInput').value='';
+  document.getElementById('imgFileInput').value='';
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  var curImg = t ? t.questions[qi].explanationImage : '';
-  document.getElementById('imgPreviewWrap').innerHTML = curImg
-    ? '<img class="img-preview" src="'+esc(curImg)+'">' : '';
-  document.getElementById('imageModalTitle').textContent = 'Картинка к пояснению';
+  var curImg=t?t.questions[qi].explanationImage:'';
+  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img class="img-preview" src="'+esc(curImg)+'">':'';
+  document.getElementById('imageModalTitle').textContent='Картинка к пояснению';
   document.getElementById('imageModal').classList.remove('hidden')
 }
 
 function closeImageModal(){
   document.getElementById('imageModal').classList.add('hidden');
-  imgMode = null;
-  imgTargetQ = null;
-  imgPendingData = null;
+  imgMode=null;imgTargetQ=null;imgPendingData=null
 }
 
 function loadImageFile(e){
@@ -1319,20 +1485,18 @@ function loadImageFile(e){
 }
 
 function saveImage(){
-  if(imgTargetQ===null || !imgMode)return;
+  if(imgTargetQ===null||!imgMode)return;
   var url=document.getElementById('imgUrlInput').value.trim();
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
 
-  var newVal = '';
-  if(imgPendingData) newVal = imgPendingData;
-  else if(url) newVal = url;
+  var newVal='';
+  if(imgPendingData)newVal=imgPendingData;
+  else if(url)newVal=url;
 
-  if(imgMode === 'question'){
-    t.questions[imgTargetQ].image = newVal;
-  } else {
-    t.questions[imgTargetQ].explanationImage = newVal;
-  }
+  if(imgMode==='question'){t.questions[imgTargetQ].image=newVal}
+  else{t.questions[imgTargetQ].explanationImage=newVal}
+
   saveTestField({questions:t.questions});
   closeImageModal();
   renderEditor()
