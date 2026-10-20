@@ -11,16 +11,13 @@ h1{font-size:1.4em}
 h2{font-size:1.15em;margin:0 0 14px}
 h3{font-size:1.02em;margin:20px 0 10px}
 .card{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-/* НОВЫЙ ПРОЦЕСС ВЫБОРА — плитки */
 .option{
   display:block;padding:14px 18px;border:2px solid #ddd;border-radius:10px;
-  margin-bottom:10px;cursor:pointer;user-select:none;
-  transition:all .15s;background:#fff;font-size:1em;
-  position:relative;padding-left:52px
+  margin-bottom:10px;cursor:pointer;user-select:none;transition:all .15s;
+  background:#fff;font-size:1em;position:relative;padding-left:52px
 }
 .option::before{
-  content:attr(data-letter);
-  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  content:attr(data-letter);position:absolute;left:14px;top:50%;transform:translateY(-50%);
   width:28px;height:28px;border-radius:50%;background:#f1f5f9;
   display:flex;align-items:center;justify-content:center;
   font-weight:700;font-size:.9em;color:#64748b;transition:all .15s
@@ -88,15 +85,17 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid #cbd5e1;borde
 .history-head .chev{color:#94a3b8;transition:.2s}
 .history-item.open .chev{transform:rotate(90deg)}
 .history-detail{padding:14px;border-top:1px solid #e2e8f0;font-size:.9em}
-.q-review{margin-bottom:14px;padding:10px;border-radius:8px;background:#f8fafc}
-.q-review-title{font-weight:600;margin-bottom:6px;font-size:.95em}
-.q-review-opts{display:flex;flex-direction:column;gap:4px}
-.q-review-opt{padding:6px 10px;border-radius:6px;font-size:.88em;background:#fff;border:1px solid #e2e8f0}
-.q-review-opt.chosen{background:#dbeafe;border-color:#2563eb;font-weight:600}
+.q-review{margin-bottom:14px;padding:12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}
+.q-review-title{font-weight:600;margin-bottom:8px;font-size:.95em}
+.q-review-opts{display:flex;flex-direction:column;gap:5px}
+.q-review-opt{padding:7px 11px;border-radius:6px;font-size:.88em;background:#fff;border:1px solid #e2e8f0}
 .q-review-opt.correct{background:#f0fdf4;border-color:#16a34a}
-.q-review-opt.chosen.correct{background:#d1fae5}
+.q-review-opt.chosen{background:#dbeafe;border-color:#2563eb;font-weight:600}
 .q-review-opt.chosen.wrong{background:#fee2e2;border-color:#dc2626}
-.q-review-meta{font-size:.82em;color:#64748b;margin-top:4px}
+.attempt-log{margin-top:8px;padding:8px 12px;background:#fff;border-radius:6px;border:1px dashed #cbd5e1;font-size:.85em}
+.attempt-log-row{padding:3px 0;border-bottom:1px solid #f1f5f9}
+.attempt-log-row:last-child{border-bottom:none}
+.q-review-meta{font-size:.82em;color:#64748b;margin-top:8px}
 .editor-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafafa}
 .editor-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .editor-item-header .num{font-weight:700;color:#64748b;font-size:.9em}
@@ -296,10 +295,8 @@ var firebaseConfig = {
   messagingSenderId: "1007097355508",
   appId: "1:1007097355508:web:a98bf4d3d4069fc21392a1"
 };
-
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
-
 var CACHE = { users: [], tests: [], history: [] };
 
 /* ============================================================
@@ -330,7 +327,7 @@ function showLoading(txt){
   if(l)l.classList.remove('hidden');
   if(t)t.textContent=txt||'Загрузка...'
 }
-function letterOf(i){return String.fromCharCode(65+i)} // A, B, C, D...
+function letterOf(i){return String.fromCharCode(65+i)}
 
 /* ============================================================
    ЗАГРУЗКА
@@ -347,9 +344,6 @@ function loadAllData(){
     return db.collection('history').get()
   }).then(function(snap){
     CACHE.history = snap.docs.map(function(d){return Object.assign({_id:d.id}, d.data())})
-  }).catch(function(e){
-    console.error('Ошибка загрузки:', e);
-    throw e
   })
 }
 
@@ -419,9 +413,8 @@ function initApp(){
     hideLoading();
     document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#dc2626;font-family:system-ui">'+
       '<h2>Ошибка подключения к Firebase</h2>'+
-      '<p style="font-size:.95em;background:#fef2f2;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
-      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте что Firestore создан и правила опубликованы:<br>'+
-      '<code style="display:block;background:#f1f5f9;padding:8px;border-radius:6px;margin-top:8px;font-size:.85em">allow read, write: if true;</code></p></div>';
+      '<p style="background:#fef2f2;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
+      '<p style="color:#64748b;font-size:.9em;margin-top:20px">Проверьте: Firestore создан, правила опубликованы.</p></div>';
   })
 }
 
@@ -579,15 +572,12 @@ function openTestStart(id){
 }
 
 /* ============================================================
-   ПРОХОЖДЕНИЕ — НОВЫЙ ПРОЦЕСС ВЫБОРА
-   Храним для каждого вопроса: attempts (всего попыток),
-   solved (решён), choices[] (индексы всех выбранных вариантов),
-   correct (правильный индекс для истории)
+   ПРОХОЖДЕНИЕ
    ============================================================ */
 var cur=0;
-var chk=false;         // проверен ли текущий вопрос
-var qStats=[];         // статистика по каждому вопросу
-var currentSel=[];     // currentSel[i] = индекс выбранного в текущий момент или null
+var chk=false;
+var qStats=[];
+var currentSel=[];
 var started=0;
 
 function startTest(){
@@ -625,7 +615,6 @@ function renderQ(){
   var rb=document.getElementById('resultBox');
   rb.innerHTML='';rb.className='';
 
-  // Если вопрос уже решён — показываем разбор и блокируем
   var solvedQ = qStats[cur].solved;
   var opts=document.getElementById('options');
   opts.innerHTML='';
@@ -656,7 +645,6 @@ function renderQ(){
   var nb=document.getElementById('nextBtn');
 
   if(solvedQ){
-    // Вопрос уже решён — кнопки проверки нет
     cb.classList.add('hidden');
     nb.classList.remove('hidden');
     nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
@@ -671,12 +659,12 @@ function pickOption(i){
   if(chk)return;
   if(qStats[cur].solved)return;
   currentSel[cur]=i;
-  // обновляем визуально
   document.querySelectorAll('.option').forEach(function(el){
     el.classList.toggle('selected', parseInt(el.dataset.i,10)===i)
   })
 }
 
+/* ВАЖНО: при неверном ответе правильный НЕ подсвечивается */
 function checkAnswer(){
   if(currentSel[cur]===null){
     var r=document.getElementById('resultBox');
@@ -685,22 +673,20 @@ function checkAnswer(){
   chk=true;
   var chosen=currentSel[cur];
   qStats[cur].attempts++;
-  // сохраняем ВСЕ выборы для истории
   qStats[cur].choices.push(chosen);
   if(qStats[cur].firstChoice===null)qStats[cur].firstChoice=chosen;
 
   var q=currentTest.questions[cur];
   var ok=chosen===q.correct;
 
-  document.querySelectorAll('.option').forEach(function(el,i){
-    el.classList.remove('selected');
-    if(i===q.correct)el.classList.add('correct');
-    else if(i===chosen)el.classList.add('wrong')
-  });
-
-  var rb=document.getElementById('resultBox');
   if(ok){
+    // Верно — подсвечиваем правильный зелёным
+    document.querySelectorAll('.option').forEach(function(el,i){
+      el.classList.remove('selected','wrong');
+      if(i===q.correct)el.classList.add('correct');
+    });
     qStats[cur].solved=true;
+    var rb=document.getElementById('resultBox');
     rb.className='result ok';
     rb.textContent='✅ Верно! Попыток на вопрос: '+qStats[cur].attempts;
     document.getElementById('checkBtn').classList.add('hidden');
@@ -708,17 +694,22 @@ function checkAnswer(){
     nb.classList.remove('hidden');
     nb.textContent=(cur===currentTest.questions.length-1)?'Показать результаты →':'Следующий вопрос →'
   } else {
+    // Неверно — подсвечиваем ТОЛЬКО выбранный красным, правильный не показываем
+    document.querySelectorAll('.option').forEach(function(el,i){
+      el.classList.remove('selected','correct');
+      if(i===chosen)el.classList.add('wrong');
+    });
+    var rb=document.getElementById('resultBox');
     rb.className='result fail';
-    rb.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте ещё раз — выберите другой вариант.';
+    rb.textContent='❌ Неверно (попытка '+qStats[cur].attempts+'). Попробуйте другой вариант.';
     setTimeout(function(){
       chk=false;
-      // Возвращаемся в режим выбора, но без подсветки правильного
       document.querySelectorAll('.option').forEach(function(el,i){
-        el.classList.remove('correct','wrong','selected');
+        el.classList.remove('correct','wrong');
         if(i===currentSel[cur])el.classList.add('selected');
         el.onclick=(function(idx){
           return function(){pickOption(idx)}
-        })(i)
+        })(i);
       });
       document.getElementById('checkBtn').disabled=false
     },1200)
@@ -732,12 +723,11 @@ function nextQuestion(){
   if(cur<currentTest.questions.length-1){cur++;renderQ()}
   else finishTest()
 }
-
 function prevQuestion(){
   if(cur>0){cur--;renderQ()}
 }
 
-async function finishTest(){
+function finishTest(){
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.remove('hidden');
   var tot=qStats.reduce(function(s,q){return s+q.attempts},0);
@@ -751,16 +741,25 @@ async function finishTest(){
     '<div class="stat"><b>'+tot+'</b>попыток</div>'+
     '<div class="stat"><b>'+el+'</b>сек</div>';
 
-  // Готовим детали: по каждому вопросу — что выбирали
+  // Детали с полным логом попыток по каждому вопросу
   var details = currentTest.questions.map(function(q,i){
+    var choices = qStats[i].choices.slice();
+    var attemptLog = choices.map(function(chosenIdx, idx){
+      return {
+        attempt: idx + 1,
+        chosen: chosenIdx,
+        isCorrect: chosenIdx === q.correct
+      }
+    });
     return {
       question: q.question,
       options: q.options,
       correct: q.correct,
-      choices: qStats[i].choices,       // массив всех выборов
-      firstChoice: qStats[i].firstChoice,
       attempts: qStats[i].attempts,
-      solved: qStats[i].solved
+      solved: qStats[i].solved,
+      choices: choices,
+      firstChoice: qStats[i].firstChoice,
+      attemptLog: attemptLog
     }
   });
 
@@ -780,13 +779,12 @@ async function finishTest(){
   };
 
   var id = genId();
-  try {
-    await db.collection('history').doc(id).set(rec);
+  db.collection('history').doc(id).set(rec).then(function(){
     CACHE.history.unshift(Object.assign({_id:id}, rec))
-  } catch(e){
+  }).catch(function(e){
     console.error('Не удалось сохранить результат:', e);
     alert('Результат не сохранён: '+e.message)
-  }
+  })
 }
 /* ============================================================
    СМЕНА ПАРОЛЯ (только admin)
@@ -901,18 +899,33 @@ function buildHistoryDetailHTML(r){
     var optsHtml=d.options.map(function(opt,oi){
       var cls='q-review-opt';
       if(oi===d.correct)cls+=' correct';
-      // выбранные варианты — все, что есть в choices
-      if(d.choices&&d.choices.indexOf(oi)!==-1)cls+=' chosen';
       if(d.choices&&d.choices.indexOf(oi)!==-1 && oi!==d.correct)cls+=' wrong';
-      var mark='';
-      if(d.choices&&d.choices.indexOf(oi)!==-1)mark+=' 👈 выбирал';
-      if(oi===d.correct)mark+=' ✓ правильный';
-      return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+mark+'</div>'
+      if(d.choices&&d.choices.indexOf(oi)!==-1)cls+=' chosen';
+      var marks=[];
+      if(d.choices&&d.choices.indexOf(oi)!==-1)marks.push('👈 выбирал');
+      if(oi===d.correct)marks.push('✓ правильный');
+      return '<div class="'+cls+'">'+letterOf(oi)+') '+esc(opt)+' '+marks.join(' ')+'</div>'
     }).join('');
+
+    var logHtml='';
+    if(d.attemptLog&&d.attemptLog.length){
+      logHtml='<div class="attempt-log">'+
+        '<b>Все попытки:</b>'+
+        d.attemptLog.map(function(a){
+          return '<div class="attempt-log-row">'+
+            'Попытка '+a.attempt+': <b>'+letterOf(a.chosen)+'</b> '+
+            (a.isCorrect?'<span style="color:#16a34a">✓ верно</span>':'<span style="color:#dc2626">✕ неверно</span>')+
+          '</div>'
+        }).join('')+
+      '</div>'
+    }
+
     return '<div class="q-review">'+
       '<div class="q-review-title">'+(i+1)+'. '+esc(d.question||'(без текста)')+'</div>'+
       '<div class="q-review-opts">'+optsHtml+'</div>'+
-      '<div class="q-review-meta">Попыток: '+d.attempts+' • '+
+      logHtml+
+      '<div class="q-review-meta">'+
+        'Попыток: '+d.attempts+' • '+
         (d.solved?'✅ решён':'❌ не решён')+
         (d.firstChoice!==null&&d.firstChoice!==undefined?' • Первый выбор: '+letterOf(d.firstChoice):'')+
       '</div>'+
@@ -936,7 +949,7 @@ function clearTestHistory(){
 }
 
 /* ============================================================
-   ПОЛЬЗОВАТЕЛИ (admin) — удаление аккаунтов
+   ПОЛЬЗОВАТЕЛИ (admin) — удаление и разжалование админов
    ============================================================ */
 function renderUsers(){
   var users=getUsers();var h=getHistory();
@@ -957,14 +970,18 @@ function renderUsers(){
       users.map(function(u){
         var runs=h.filter(function(r){return r.user===u.login}).length;
         var isSelf=u.login===currentUser.login;
-        var canDel=!isSelf&&u.login!=='admin';
+        var isRootAdmin=u.login==='admin';
+        var canDel=!isSelf&&!isRootAdmin;
         return '<tr style="border-bottom:1px solid #eef2f7">'+
-          '<td style="padding:10px"><b>'+esc(u.login)+'</b>'+(isSelf?' <span style="color:#00AAFF;font-size:.82em">(вы)</span>':'')+'</td>'+
+          '<td style="padding:10px"><b>'+esc(u.login)+'</b>'+
+            (isSelf?' <span style="color:#00AAFF;font-size:.82em">(вы)</span>':'')+
+            (isRootAdmin?' <span style="color:#92400e;font-size:.78em">🔒 основной</span>':'')+'</td>'+
           '<td style="padding:10px"><span class="role-badge '+(u.role==='admin'?'role-admin':'role-user')+'">'+
             (u.role==='admin'?'Админ':'Пользователь')+'</span></td>'+
           '<td style="padding:10px">'+runs+'</td>'+
           '<td style="padding:10px;text-align:right">'+
             (u.role!=='admin'?'<button class="small secondary" onclick="promoteUser(\''+esc(u.login)+'\')">↑ Сделать админом</button> ':'')+
+            (u.role==='admin'&&!isRootAdmin&&!isSelf?'<button class="small secondary" onclick="demoteUser(\''+esc(u.login)+'\')">↓ Разжаловать</button> ':'')+
             (u.role!=='admin'?'<button class="small secondary" onclick="resetUserPassword(\''+esc(u.login)+'\')">🔑 Сброс пароля</button> ':'')+
             (canDel?'<button class="small danger" onclick="deleteUser(\''+esc(u.login)+'\')">🗑 Удалить</button>':'')+
           '</td>'+
@@ -979,6 +996,15 @@ function promoteUser(login){
   if(!u)return;
   db.collection('users').doc(u._id).update({role:'admin'}).then(function(){
     u.role='admin';renderUsers()
+  }).catch(function(e){alert('Ошибка: '+e.message)})
+}
+
+function demoteUser(login){
+  if(!confirm('Разжаловать «'+login+'» в обычного пользователя?'))return;
+  var u=CACHE.users.find(function(x){return x.login===login});
+  if(!u)return;
+  db.collection('users').doc(u._id).update({role:'user'}).then(function(){
+    u.role='user';renderUsers()
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
@@ -997,10 +1023,15 @@ function resetUserPassword(login){
 function deleteUser(login){
   var u=CACHE.users.find(function(x){return x.login===login});
   if(!u)return;
+  if(u.login===currentUser.login){alert('Нельзя удалить самого себя');return}
+  if(u.login==='admin'){alert('Нельзя удалить главного администратора');return}
+
   var runs=CACHE.history.filter(function(r){return r.user===login}).length;
-  var msg='Удалить аккаунт «'+login+'»?\n\n';
-  if(runs>0)msg+='Вместе с аккаунтом будет удалено '+runs+' записей истории прохождений.\n\n';
-  msg+='Действие нельзя отменить.';
+  var isAdmin=u.role==='admin';
+  var msg='Удалить аккаунт «'+login+'»?';
+  if(isAdmin)msg+='\n\n⚠️ Это АДМИНИСТРАТОР — он тоже потеряет доступ.';
+  if(runs>0)msg+='\n\nВместе с аккаунтом будет удалено '+runs+' записей истории.';
+  msg+='\n\nДействие нельзя отменить.';
   if(!confirm(msg))return;
 
   var toDel=CACHE.history.filter(function(r){return r.user===login});
@@ -1065,7 +1096,7 @@ function renderEditor(){
   list.innerHTML=t.questions.map(function(q,qi){
     var opts=q.options.map(function(opt,oi){
       return '<div class="opt-row">'+
-        '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" title="Отметить как правильный">'+
+        '<input type="radio" name="c_'+qi+'" '+(q.correct===oi?'checked':'')+' onchange="setCorrect('+qi+','+oi+')" title="Правильный">'+
         '<input type="text" value="'+esc(opt)+'" oninput="updOpt('+qi+','+oi+',this.value)" placeholder="Вариант '+letterOf(oi)+'">'+
         '<button class="small secondary" onclick="delOpt('+qi+','+oi+')" '+(q.options.length<=2?'disabled':'')+'>✕</button>'+
       '</div>'
@@ -1172,8 +1203,8 @@ function openImageModal(qi){
   document.getElementById('imgUrlInput').value='';
   document.getElementById('imgFileInput').value='';
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
-  var cur=t?t.questions[qi].image:'';
-  document.getElementById('imgPreviewWrap').innerHTML=cur?'<img class="img-preview" src="'+esc(cur)+'">':'';
+  var curImg=t?t.questions[qi].image:'';
+  document.getElementById('imgPreviewWrap').innerHTML=curImg?'<img class="img-preview" src="'+esc(curImg)+'">':'';
   document.getElementById('imageModal').classList.remove('hidden')
 }
 function closeImageModal(){
