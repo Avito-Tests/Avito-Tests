@@ -249,17 +249,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
     </div>
   </div>
 
-  <div id="tab-results" class="hidden">
-    <div class="card">
-      <h2>Все результаты</h2>
-      <div class="form-row" style="max-width:400px"><label>Тест:</label><select id="resultsTestFilter" onchange="renderResults()"></select></div>
-      <div class="form-row" style="max-width:400px"><label>Пользователь / гость:</label><select id="resultsUserFilter" onchange="renderResults()"><option value="">Все</option></select></div>
-    </div>
-    <div class="card">
-      <h2 style="margin:0">История</h2>
-      <div id="historyList"></div>
-    </div>
-  </div>
 
   <div id="tab-dates" class="hidden">
     <div class="card">
@@ -574,7 +563,6 @@ function subscribeToHistory(){
       var activeTab=document.querySelector('.tab.active');
       if(activeTab){
         var name=activeTab.dataset.tab;
-        if(name==='results'&&currentUser&&currentUser.role==='admin')renderResults();
         if(name==='dates'&&currentUser&&currentUser.role==='admin')renderDatesTab();
         if(name==='myresults'&&currentUser&&currentUser.role!=='admin')renderMyResults();
         if(name==='stats'&&currentUser&&currentUser.role==='admin')renderStats();
@@ -715,7 +703,7 @@ function logout(){setSession(null);currentUser=null;showAuthScreen()}function en
 }
 
 function switchTab(name){
-  var adminOnly=['pending','results','dates','stats','users','editor'];
+  var adminOnly=['pending','dates','stats','users','editor'];
   if(adminOnly.indexOf(name)!==-1&&(!currentUser||currentUser.role!=='admin'))name='tests';
   if(name==='myresults'&&currentUser&&currentUser.role==='admin')name='tests';
 
@@ -726,14 +714,13 @@ function switchTab(name){
   document.querySelectorAll('.tab[data-tab]').forEach(function(t){
     t.classList.toggle('active',t.dataset.tab===name)
   });
-  ['tests','myresults','pending','results','dates','stats','users','account','editor'].forEach(function(n){
+  ['tests','myresults','pending','dates','stats','users','account','editor'].forEach(function(n){
     var el=document.getElementById('tab-'+n);
     if(el)el.classList.toggle('hidden',n!==name)
   });
   if(name==='tests')renderTests();
   if(name==='myresults')renderMyResults();
   if(name==='pending')renderPending();
-  if(name==='results')renderResults();
   if(name==='dates')renderDatesTab();
   if(name==='stats')renderStats();
   if(name==='users')renderUsers();
