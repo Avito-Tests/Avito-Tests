@@ -427,10 +427,9 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 // Создаем провайдер reCAPTCHA v3
-var appCheckProvider = new firebase.appCheck.ReCaptchaV3Provider('6Lf3RPotAAAAAK8kVg4K6xBGMBRtLBY10sio2uS7');
 
 // Активируем
-firebase.appCheck().activate(appCheckProvider, true);
+// firebase.appCheck().activate(appCheckProvider, true);
 var db=firebase.firestore();
 try{db.settings({ignoreUndefinedProperties:true, merge: true});}catch(e){}
 
