@@ -279,7 +279,10 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div><h2 style="margin:0" id="editorTitle">Редактор теста</h2><p style="color:var(--muted);font-size:.88em;margin:4px 0 0" id="editorInfo"></p></div>
-        <button class="secondary small" onclick="backToTests()">← К тестам</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="small" onclick="openTestDatesStats()">📅 Результаты по датам</button>
+          <button class="secondary small" onclick="backToTests()">← К тестам</button>
+        </div>
       </div>
       <div class="form-row"><label>Название теста</label><input type="text" id="editorTestName" name="app_test_title" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="updateTestName(this.value)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
@@ -299,6 +302,19 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
       <div id="editorList"></div>
       <div class="toolbar"><button onclick="addQuestion()">+ Добавить вопрос</button></div>
     </div>
+  </div>
+</div>
+
+<div id="datesStatsModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeDatesStats()">
+  <div class="modal" style="max-width:900px;max-height:85vh;overflow:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0" id="datesStatsTitle">Результаты по датам</h3>
+      <div style="display:flex;gap:8px">
+        <button class="small secondary" onclick="copyAllDates()">📋 Скопировать всё</button>
+        <button class="small secondary" onclick="closeDatesStats()">✕ Закрыть</button>
+      </div>
+    </div>
+    <div id="datesStatsContent"></div>
   </div>
 </div>
 
@@ -724,7 +740,7 @@ function renderTests(){
   var role=currentUser.role;
   var tests=all.filter(function(t){
     var acc=t.access;
-    if(!acc||!acc.length)return true; // старые тесты — видны всем
+    if(!acc||!acc.length)return true;
     return acc.indexOf(role)!==-1;
   });
   var list=document.getElementById('testsList');
@@ -1896,9 +1912,7 @@ function resetAvatar(){
     closeAvatarModal();
     renderAccount();
   }).catch(function(e){alert('Ошибка: '+e.message)})
-}
-
-/* === РЕДАКТОР === */
+}/* === РЕДАКТОР === */
 var editTestId=null;
 
 function createTest(){
@@ -2100,6 +2114,162 @@ function removeQImage(qi){
 function removeExplanationImage(qi){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});if(!t)return;
   t.questions[qi].explanationImage='';saveTestField({questions:t.questions});renderEditor()
+}
+
+/* === РЕЗУЛЬТАТЫ ПО ДАТАМ (админ, на тест) === */
+function openTestDatesStats(){
+  if(!currentUser||currentUser.role!=='admin'){alert('Только для админа');return}
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  if(!t){alert('Тест не найден');return}
+  document.getElementById('datesStatsTitle').textContent='📅 '+t.name+' — результаты по датам';
+  renderDatesStats(t._id);
+  document.getElementById('datesStatsModal').classList.remove('hidden')
+}
+function closeDatesStats(){document.getElementById('datesStatsModal').classList.add('hidden')}
+
+function renderDatesStats(testId){
+  var t=CACHE.tests.find(function(x){return x._id===testId});
+  var content=document.getElementById('datesStatsContent');
+  if(!t){content.innerHTML='<div class="empty-state">Тест не найден</div>';return}
+
+  var results=CACHE.history.filter(function(r){return r.testId===testId});
+  if(!results.length){
+    content.innerHTML='<div class="empty-state">📭 По этому тесту пока нет результатов</div>';return
+  }
+
+  var groups={};
+  results.forEach(function(r){
+    var day=(r.date||'').split(',')[0].trim()||'—';
+    if(!groups[day])groups[day]=[];
+    groups[day].push(r)
+  });
+  var days=Object.keys(groups).sort(function(a,b){
+    var ta=Math.max.apply(null,groups[a].map(function(r){return r.timestamp||0}));
+    var tb=Math.max.apply(null,groups[b].map(function(r){return r.timestamp||0}));
+    return tb-ta
+  });
+
+  var html='';
+  days.forEach(function(day){
+    var rows=groups[day].slice().sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0)});
+    var total=rows.length;
+    var checked=rows.filter(function(r){return r.checkStatus==='checked'}).length;
+    var pending=total-checked;
+    var sumPct=0, sumFirst=0, sumQ=0;
+    rows.forEach(function(r){
+      var c=0;
+      (r.details||[]).forEach(function(d){if(isCorrectFirstTry(d))c++});
+      sumFirst+=c; sumQ+=r.questions||0;
+      sumPct+=r.questions?c/r.questions*100:0;
+    });
+    var avgPct=total?Math.round(sumPct/total):0;
+
+    html+='<div style="margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden">';
+    html+='<div style="background:var(--header);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'+
+      '<div><b>'+esc(day)+'</b> <span style="color:var(--muted);font-size:.85em">• прохождений: '+total+' • проверено: '+checked+(pending>0?' • ⏳ '+pending:'')+' • средний % с 1-й: '+avgPct+'%</span></div>'+
+      '<button class="small" onclick="copyDay(\''+esc(day).replace(/'/g,"\\'")+'\',\''+testId+'\')">📋 Скопировать этот день</button>'+
+    '</div>';
+
+    html+='<table style="width:100%;border-collapse:collapse;font-size:.88em"><thead><tr style="background:var(--surface);text-align:left">'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">Время</th>'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">Пользователь</th>'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">Роль</th>'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">Верно с 1-й</th>'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">Всего</th>'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">%</th>'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">Попыток</th>'+
+      '<th style="padding:8px;border-bottom:1px solid var(--border)">Статус</th>'+
+    '</tr></thead><tbody>';
+
+    rows.forEach(function(r){
+      var c=0;
+      (r.details||[]).forEach(function(d){if(isCorrectFirstTry(d))c++});
+      var pct=r.questions?Math.round(c/r.questions*100):0;
+      var time=(r.date||'').split(',').slice(1).join(',').trim()||'';
+      var who=r.userRole==='guest'?(r.fio||r.user):r.user;
+      var roleTxt=r.userRole==='guest'?'Гость':r.userRole==='admin'?'Админ':'Польз.';
+      var statusTxt=r.checkStatus==='pending'?'⏳ На проверке':'✓ Проверено';
+      html+='<tr>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">'+esc(time)+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">'+esc(who)+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">'+roleTxt+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)"><b>'+c+'</b></td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">'+(r.questions||0)+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">'+pct+'%</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">'+(r.totalAttempts||0)+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">'+statusTxt+'</td>'+
+      '</tr>'
+    });
+    html+='</tbody></table></div>'
+  });
+
+  content.innerHTML=html
+}
+
+function buildDayTSV(day,testId){
+  var rows=CACHE.history.filter(function(r){
+    return r.testId===testId && (r.date||'').split(',')[0].trim()===day
+  }).sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0)});
+
+  var lines=[];
+  lines.push(['Время','Пользователь','Роль','Верно с 1-й','Всего','Процент','Попыток','Статус'].join('\t'));
+  rows.forEach(function(r){
+    var c=0;
+    (r.details||[]).forEach(function(d){if(isCorrectFirstTry(d))c++});
+    var pct=r.questions?Math.round(c/r.questions*100):0;
+    var time=(r.date||'').split(',').slice(1).join(',').trim()||'';
+    var who=r.userRole==='guest'?(r.fio||r.user):r.user;
+    var roleTxt=r.userRole==='guest'?'Гость':r.userRole==='admin'?'Админ':'Польз.';
+    var statusTxt=r.checkStatus==='pending'?'На проверке':'Проверено';
+    lines.push([time,who,roleTxt,c,r.questions||0,pct+'%',r.totalAttempts||0,statusTxt].join('\t'))
+  });
+  return lines.join('\n')
+}
+
+function copyDay(day,testId){
+  var text=buildDayTSV(day,testId);
+  copyToClipboard(text,day)
+}
+
+function copyAllDates(){
+  var t=CACHE.tests.find(function(x){return x._id===editTestId});
+  if(!t)return;
+  var rows=CACHE.history.filter(function(r){return r.testId===t._id})
+    .sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0)});
+  if(!rows.length){alert('Нет результатов');return}
+  var lines=[];
+  lines.push(['Дата','Время','Пользователь','Роль','Верно с 1-й','Всего','Процент','Попыток','Статус'].join('\t'));
+  rows.forEach(function(r){
+    var c=0;
+    (r.details||[]).forEach(function(d){if(isCorrectFirstTry(d))c++});
+    var pct=r.questions?Math.round(c/r.questions*100):0;
+    var parts=(r.date||'').split(',');
+    var day=parts[0]?parts[0].trim():'—';
+    var time=parts.slice(1).join(',').trim()||'';
+    var who=r.userRole==='guest'?(r.fio||r.user):r.user;
+    var roleTxt=r.userRole==='guest'?'Гость':r.userRole==='admin'?'Админ':'Польз.';
+    var statusTxt=r.checkStatus==='pending'?'На проверке':'Проверено';
+    lines.push([day,time,who,roleTxt,c,r.questions||0,pct+'%',r.totalAttempts||0,statusTxt].join('\t'))
+  });
+  copyToClipboard(lines.join('\n'),'все дни')
+}
+
+function copyToClipboard(text,label){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      alert('📋 Скопировано ('+label+'). Вставьте в Excel/Google Sheets.')
+    }).catch(function(){fallbackCopy(text,label)})
+  } else {
+    fallbackCopy(text,label)
+  }
+}
+function fallbackCopy(text,label){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');alert('📋 Скопировано ('+label+').')}
+  catch(e){alert('Не удалось скопировать. Выделите таблицу и Ctrl+C.')}
+  document.body.removeChild(ta)
 }
 
 /* === СТАРТ === */
