@@ -426,7 +426,7 @@ var firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 firebase.appCheck().activate('6Lc4E_otAAAAAOuVHOLlUtBn39HAPdgH3D43Mi23', true);
 var db=firebase.firestore();
-try{db.settings({ignoreUndefinedProperties:true});}catch(e){}
+try{db.settings({ignoreUndefinedProperties:true, merge: true});}catch(e){}
 
 /* === OFFLINE PERSISTENCE === */
 try{
