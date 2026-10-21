@@ -122,6 +122,9 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .attempt-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
 .attempt-row:last-child{border-bottom:none}
 .warn-note{margin-top:8px;font-size:.85em;color:var(--warn)}
+.access-row{display:flex;gap:16px;flex-wrap:wrap;padding:8px 0}
+.access-row label{display:flex;align-items:center;gap:6px;font-size:.9em;cursor:pointer}
+.access-row input[type=checkbox]{width:auto}
 </style>
 </head>
 <body><div id="authScreen" class="auth-container hidden">
@@ -283,6 +286,14 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
         <div class="form-row" style="margin:0"><label>⏱️ Время (мин, 0 = нет)</label><input type="number" id="editorTimeLimit" min="0" max="180" oninput="updateTestTimeLimit(this.value)" name="app_time"></div>
         <div class="form-row" style="margin:0"><label>🎯 Порог (верных, 0 = нет)</label><input type="number" id="editorPassScore" min="0" oninput="updateTestPassScore(this.value)" name="app_pass" placeholder="например 7"></div>
         <div class="form-row" style="margin:0"><label>🔀 Перемешивать</label><select id="editorShuffle" onchange="updateTestShuffle(this.value)" name="app_shuffle"><option value="none">Нет</option><option value="questions">Вопросы</option><option value="both">Вопросы + варианты</option></select></div>
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <label>👥 Кому доступен тест</label>
+        <div class="access-row">
+          <label><input type="checkbox" id="accGuest" onchange="updateTestAccess()"> Гость</label>
+          <label><input type="checkbox" id="accUser" onchange="updateTestAccess()"> Зарегистрированный</label>
+          <label><input type="checkbox" id="accAdmin" onchange="updateTestAccess()"> Админ</label>
+        </div>
       </div>
       <div id="editorMsg"></div>
       <div id="editorList"></div>
@@ -486,7 +497,7 @@ function ensureAdminAndDemos(){
   }
   if(CACHE.tests.length===0){
     var d1Id=genId();
-    var d1={name:'Демо: общие знания',timeLimit:0,passCount:0,shuffle:'none',questions:[
+    var d1={name:'Демо: общие знания',timeLimit:0,passCount:0,shuffle:'none',access:['guest','user','admin'],questions:[
       {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
       {type:'text',question:'Сколько будет 7 × 8?',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56.',explanationImage:''}
     ]};
@@ -702,16 +713,23 @@ function updatePendingBadge(){
 }
 
 function backToTests(){currentTest=null;switchTab('tests')}
-/* === СПИСОК ТЕСТОВ === */
+
+/* === СПИСОК ТЕСТОВ (с фильтрацией доступа) === */
 function renderTests(){
   document.getElementById('testsListView').classList.remove('hidden');
   document.getElementById('startView').classList.add('hidden');
   document.getElementById('testView').classList.add('hidden');
   document.getElementById('finishView').classList.add('hidden');
-  var tests=getTests();
+  var all=getTests();
+  var role=currentUser.role;
+  var tests=all.filter(function(t){
+    var acc=t.access;
+    if(!acc||!acc.length)return true; // старые тесты — видны всем
+    return acc.indexOf(role)!==-1;
+  });
   var list=document.getElementById('testsList');
-  if(!tests.length){list.innerHTML='<div class="empty-state">📭 Тестов пока нет</div>';return}
-  var isAdmin=currentUser.role==='admin';
+  if(!tests.length){list.innerHTML='<div class="empty-state">📭 Для вашей роли тестов пока нет</div>';return}
+  var isAdmin=role==='admin';
   list.innerHTML=tests.map(function(t){
     var qn=(t.questions||[]).length;
     var hasText=(t.questions||[]).some(function(q){return q.type==='text'});
@@ -720,9 +738,15 @@ function renderTests(){
     if(t.timeLimit&&t.timeLimit>0)meta+=' • ⏱️ '+t.timeLimit+' мин';
     if(t.shuffle&&t.shuffle!=='none')meta+=' • 🔀';
     if(typeof t.passCount==='number'&&t.passCount>0)meta+=' • 🎯 '+t.passCount+' верных';
+    var accBadges='';
+    if(isAdmin){
+      var acc=t.access||['guest','user','admin'];
+      var labels={guest:'Гость',user:'Польз.',admin:'Админ'};
+      accBadges=' <span style="font-size:.75em;color:var(--muted)">• доступ: '+acc.map(function(a){return labels[a]||a}).join(', ')+'</span>';
+    }
     return '<div class="test-card">'+
       '<div class="tc-info"><div class="tc-title">'+esc(t.name)+'</div>'+
-      '<div class="tc-meta">'+meta+'</div></div>'+
+      '<div class="tc-meta">'+meta+accBadges+'</div></div>'+
       '<div class="tc-actions">'+
         '<button onclick="openTestStart(\''+t._id+'\')"'+(qn===0?' disabled':'')+'>▶ Пройти</button>'+
         (isAdmin?'<button class="small secondary" onclick="editTest(\''+t._id+'\')">✏️</button>':'')+
@@ -734,6 +758,10 @@ function renderTests(){
 function openTestStart(id){
   var t=CACHE.tests.find(function(x){return x._id===id});
   if(!t||!t.questions.length)return;
+  var acc=t.access;
+  if(acc&&acc.length&&acc.indexOf(currentUser.role)===-1){
+    alert('Этот тест недоступен для вашей роли');return
+  }
   currentTest=t;
   document.getElementById('testsListView').classList.add('hidden');
   document.getElementById('startView').classList.remove('hidden');
@@ -1877,7 +1905,7 @@ function createTest(){
   var name=prompt('Название теста:','Новый тест');
   if(!name||!name.trim())return;
   var id=genId();
-  var nt={name:name.trim(),questions:[],timeLimit:0,passCount:0,shuffle:'none'};
+  var nt={name:name.trim(),questions:[],timeLimit:0,passCount:0,shuffle:'none',access:['guest','user','admin']};
   db.collection('tests').doc(id).set(nt).then(function(){
     CACHE.tests.push(Object.assign({_id:id},nt));
     editTestId=id;switchTab('editor')
@@ -1907,6 +1935,10 @@ function renderEditor(){
   document.getElementById('editorTimeLimit').value=t.timeLimit||0;
   document.getElementById('editorPassScore').value=typeof t.passCount==='number'?t.passCount:0;
   document.getElementById('editorShuffle').value=t.shuffle||'none';
+  var acc=t.access||['guest','user','admin'];
+  document.getElementById('accGuest').checked=acc.indexOf('guest')!==-1;
+  document.getElementById('accUser').checked=acc.indexOf('user')!==-1;
+  document.getElementById('accAdmin').checked=acc.indexOf('admin')!==-1;
 
   var list=document.getElementById('editorList');
   if(!t.questions.length){list.innerHTML='<div class="empty-state">Нет вопросов — добавьте первый</div>';return}
@@ -1976,6 +2008,14 @@ function updateTestPassScore(v){
 }
 function updateTestShuffle(v){
   saveTestField({shuffle:v})
+}
+function updateTestAccess(){
+  var acc=[];
+  if(document.getElementById('accGuest').checked)acc.push('guest');
+  if(document.getElementById('accUser').checked)acc.push('user');
+  if(document.getElementById('accAdmin').checked)acc.push('admin');
+  if(!acc.length){alert('Выберите хотя бы одну роль');return}
+  saveTestField({access:acc})
 }
 
 function addQuestion(){
