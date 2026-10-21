@@ -137,21 +137,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .dates-picker select{flex:1;min-width:180px;max-width:300px}
 .back-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;font-weight:700;font-size:.9em;margin-bottom:16px;transition:.15s}
 .back-btn:hover{border-color:var(--accent);background:var(--card2)}
-/* === НОВОЕ: навигация по вопросам === */
 .qnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px}
 .qnav-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-weight:800;font-size:.82em;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;padding:0}
 .qnav-btn:hover{border-color:var(--accent);color:var(--accent)}
 .qnav-btn.current{background:var(--accent);color:#062033;border-color:var(--accent)}
 .qnav-btn.solved{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
 .qnav-btn.pending{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
-/* === НОВОЕ: сравнение попыток === */
 .attempt-compare{margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
 .attempt-compare-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 .attempt-compare-row{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.88em}
 .attempt-compare-row:last-child{border-bottom:none}
 .attempt-compare-row .n{width:28px;height:28px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8em;color:var(--muted);flex-shrink:0}
 .attempt-compare-row .pct{font-weight:800;color:var(--accent);min-width:50px;text-align:right}
-/* === НОВОЕ: валидация === */
 .editor-warn{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:.9em;line-height:1.5}
 .editor-warn.err{background:var(--fail-bg);color:var(--fail);border-left:4px solid var(--fail)}
 .editor-warn.warn{background:var(--warn-bg);color:var(--warn);border-left:4px solid var(--warn)}
@@ -414,6 +411,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
     </div>
   </div>
 </div><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* === FIREBASE === */
@@ -426,8 +424,17 @@ var firebaseConfig={
   appId:"1:1007097355508:web:a98bf4d3d4069fc21392a1"
 };
 firebase.initializeApp(firebaseConfig);
+firebase.appCheck().activate('6Lc4E_otAAAAAOuVHOLlUtBn39HAPdgH3D43Mi23', true);
 var db=firebase.firestore();
 try{db.settings({ignoreUndefinedProperties:true});}catch(e){}
+
+/* === OFFLINE PERSISTENCE === */
+try{
+  db.enablePersistence({synchronizeTabs:true}).catch(function(err){
+    if(err.code==='failed-precondition')console.warn('Persistence: несколько вкладок');
+    else if(err.code==='unimplemented')console.warn('Persistence: браузер не поддерживает IndexedDB');
+  });
+}catch(e){console.warn('Persistence error:',e)}
 
 var CACHE={users:[],tests:[],history:[]};
 
@@ -448,12 +455,35 @@ function cleanForFirestore(obj){
   return result
 }
 
-/* === УТИЛИТЫ === */
-function hashPass(p){
+/* === ПАРОЛИ: SHA-256 через Web Crypto + миграция === */
+async function hashPass(p){
+  if(!window.crypto||!crypto.subtle)return hashPassLegacy(p);
+  try{
+    var buf=new TextEncoder().encode(p);
+    var hash=await crypto.subtle.digest('SHA-256',buf);
+    return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0')}).join('')
+  }catch(e){
+    console.warn('SHA-256 недоступен, fallback:',e);
+    return hashPassLegacy(p)
+  }
+}
+function hashPassLegacy(p){
   var h=5381;
   for(var i=0;i<p.length;i++)h=((h<<5)+h+p.charCodeAt(i))|0;
   return 'h'+Math.abs(h).toString(36)+'_'+p.length
 }
+function isLegacyHash(hash){
+  return hash&&typeof hash==='string'&&hash.startsWith('h')&&hash.includes('_')&&hash.length<30
+}
+async function verifyPass(pass,storedHash){
+  if(isLegacyHash(storedHash)){
+    return hashPassLegacy(pass)===storedHash
+  }
+  var newHash=await hashPass(pass);
+  return newHash===storedHash
+}
+
+/* === УТИЛИТЫ === */
 function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g,function(c){
     return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
@@ -535,7 +565,7 @@ function recalcCorrectCount(details){
   return c;
 }
 
-/* === ЗАГРУЗКА === */
+/* === ЗАГРУЗКА (первичная — только при старте) === */
 function loadAllData(){
   return db.collection('users').get().then(function(snap){
     CACHE.users=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
@@ -551,23 +581,29 @@ function loadAllData(){
 function ensureAdminAndDemos(){
   var promises=[];
   if(CACHE.users.length===0){
-    var adminId=genId();
-    var admin={login:'admin',passHash:hashPass('admin'),role:'admin',createdAt:new Date().toISOString(),avatarUrl:''};
-    promises.push(db.collection('users').doc(adminId).set(admin).then(function(){
-      CACHE.users.push(Object.assign({_id:adminId},admin))
-    }))
+    return hashPass('admin').then(function(h){
+      var adminId=genId();
+      var admin={login:'admin',passHash:h,role:'admin',createdAt:new Date().toISOString(),avatarUrl:''};
+      return db.collection('users').doc(adminId).set(admin).then(function(){
+        CACHE.users.push(Object.assign({_id:adminId},admin))
+      })
+    }).then(function(){ return demos() })
   }
-  if(CACHE.tests.length===0){
-    var d1Id=genId();
-    var d1={name:'Демо: общие знания',timeLimit:0,passCount:0,shuffle:'none',access:['guest','user','admin'],questions:[
-      {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
-      {type:'text',question:'Сколько будет 7 × 8?',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56.',explanationImage:''}
-    ]};
-    promises.push(db.collection('tests').doc(d1Id).set(d1).then(function(){
-      CACHE.tests.push(Object.assign({_id:d1Id},d1))
-    }))
+  return demos();
+
+  function demos(){
+    if(CACHE.tests.length===0){
+      var d1Id=genId();
+      var d1={name:'Демо: общие знания',timeLimit:0,passCount:0,shuffle:'none',access:['guest','user','admin'],questions:[
+        {type:'choice',question:'Столица Франции?',options:['Лондон','Париж','Берлин','Мадрид'],correct:1,correctText:'',image:'',explanation:'Париж — столица Франции с 987 года.',explanationImage:''},
+        {type:'text',question:'Сколько будет 7 × 8?',options:[],correct:0,correctText:'56',image:'',explanation:'7 × 8 = 56.',explanationImage:''}
+      ]};
+      return db.collection('tests').doc(d1Id).set(d1).then(function(){
+        CACHE.tests.push(Object.assign({_id:d1Id},d1))
+      })
+    }
+    return Promise.resolve()
   }
-  return Promise.all(promises)
 }
 
 function getUsers(){return CACHE.users.slice()}
@@ -583,7 +619,7 @@ function findUserByLogin(login){
 }
 function loginExists(login){return !!findUserByLogin(login)}
 
-/* === ПОДПИСКА === */
+/* === ПОДПИСКИ (реального времени, меньше чтений) === */
 function subscribeToHistory(){
   db.collection('history').onSnapshot(function(snap){
     var changed=false;
@@ -613,7 +649,21 @@ function subscribeToHistory(){
         if(name==='stats'&&currentUser&&currentUser.role==='admin')renderStats();
       }
     }
-  },function(error){console.error('Ошибка подписки:',error)})
+  },function(error){console.error('Ошибка подписки history:',error)})
+}
+
+function subscribeToTestsAndUsers(){
+  db.collection('tests').onSnapshot(function(snap){
+    CACHE.tests=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
+    var activeTab=document.querySelector('.tab.active');
+    if(activeTab&&activeTab.dataset.tab==='tests')renderTests();
+  },function(error){console.warn('Ошибка подписки tests:',error)});
+
+  db.collection('users').onSnapshot(function(snap){
+    CACHE.users=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
+    var activeTab=document.querySelector('.tab.active');
+    if(activeTab&&activeTab.dataset.tab==='users'&&currentUser&&currentUser.role==='admin')renderUsers();
+  },function(error){console.warn('Ошибка подписки users:',error)})
 }
 
 /* === СЕССИЯ === */
@@ -636,6 +686,7 @@ function initApp(){
   }).then(function(){
     hideLoading();
     subscribeToHistory();
+    subscribeToTestsAndUsers();
     var s=getSession();
     if(s){
       if(s.type==='guest'){enterApp({login:s.fio,role:'guest',fio:s.fio,isGuest:true});return}
@@ -649,7 +700,7 @@ function initApp(){
     document.body.innerHTML='<div style="padding:40px;text-align:center;color:#f87171;font-family:system-ui">'+
       '<h2>Ошибка подключения к Firebase</h2>'+
       '<p style="background:#7f1d1d;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
-      '<p style="color:#94a3b8;font-size:.9em;margin-top:20px">Проверьте: Firestore создан, правила опубликованы.</p></div>';
+      '<p style="color:#94a3b8;font-size:.9em;margin-top:20px">Проверьте: Firestore создан, правила опубликованы, App Check настроен.</p></div>';
   })
 }
 
@@ -674,19 +725,33 @@ function switchAuthTab(name){
   var m=document.getElementById('authMsg');m.style.display='none';m.textContent=''
 }
 
-function handleLogin(e){
+/* === ВХОД (async + миграция) === */
+async function handleLogin(e){
   e.preventDefault();
   var login=document.getElementById('loginUser').value.trim();
   var pass=document.getElementById('loginPass').value;
   var u=findUserByLogin(login);
   if(!u){showMsg('authMsg','err','Пользователь не найден');return}
-  if(u.passHash!==hashPass(pass)){showMsg('authMsg','err','Неверный пароль');return}
+  var ok=await verifyPass(pass,u.passHash);
+  if(!ok){showMsg('authMsg','err','Неверный пароль');return}
+
+  // Миграция старого хэша на SHA-256
+  if(isLegacyHash(u.passHash)){
+    try{
+      var newHash=await hashPass(pass);
+      await db.collection('users').doc(u._id).update({passHash:newHash});
+      u.passHash=newHash;
+      console.log('✓ Пароль мигрирован на SHA-256');
+    }catch(err){console.warn('Не удалось мигрировать пароль:',err)}
+  }
+
   setSession({type:'user',login:u.login});
   document.getElementById('loginPass').value='';
   enterApp(u)
 }
 
-function handleRegister(e){
+/* === РЕГИСТРАЦИЯ (async) === */
+async function handleRegister(e){
   e.preventDefault();
   var login=document.getElementById('regUser').value.trim();
   var pass=document.getElementById('regPass').value;
@@ -695,8 +760,9 @@ function handleRegister(e){
   if(pass.length<4){showMsg('authMsg','err','Пароль минимум 4 символа');return}
   if(pass!==pass2){showMsg('authMsg','err','Пароли не совпадают');return}
   if(loginExists(login)){showMsg('authMsg','err','Логин уже занят');return}
+  var hash=await hashPass(pass);
   var id=genId();
-  var nu={login:login,passHash:hashPass(pass),role:'user',createdAt:new Date().toISOString(),avatarUrl:''};
+  var nu={login:login,passHash:hash,role:'user',createdAt:new Date().toISOString(),avatarUrl:''};
   db.collection('users').doc(id).set(nu).then(function(){
     CACHE.users.push(Object.assign({_id:id},nu));
     setSession({type:'user',login:nu.login});
@@ -1039,7 +1105,6 @@ function stopTimer(){
 
   document.getElementById('progress').textContent='Вопрос '+(cur+1)+' из '+activeTest.questions.length+' • Попыток: '+qStats[cur].attempts;
 
-  // === НОВОЕ: навигация по вопросам ===
   renderQuestionNav();
 
   var badge=qtype==='text'
@@ -1111,7 +1176,6 @@ function stopTimer(){
     cb.disabled=false;
     nb.classList.add('hidden');
     sb.classList.remove('hidden');
-    // Пропустить доступен, если вопрос не отвечен
     var isAnswered = (qtype==='choice' ? currentSel[cur]!==null : (currentSel[cur]||'').trim()!=='');
     sb.disabled=!isAnswered;
     sb.title=isAnswered?'Можно пропустить':'Сначала выберите/введите ответ'
@@ -1152,7 +1216,6 @@ function pickOption(i){
   document.getElementById('skipBtn').title='Можно пропустить'
 }
 
-/* === НОВОЕ: Пропустить === */
 function skipQuestion(){
   if(cur<activeTest.questions.length-1){
     cur++;
@@ -1160,7 +1223,6 @@ function skipQuestion(){
     renderQ();
     return
   }
-  // если это последний — ищем первый неотвеченный
   var unanswered=-1;
   for(var i=0;i<activeTest.questions.length;i++){
     if(!qStats[i].solved){unanswered=i;break}
@@ -1406,7 +1468,7 @@ function renderMyResults(){
   }).join('')
 }
 
-/* === НОВОЕ: Сравнение попыток === */
+/* === СРАВНЕНИЕ ПОПЫТОК === */
 function renderAttemptComparison(){
   var wrap=document.getElementById('attemptCompareWrap');
   if(!wrap)return;
@@ -1415,7 +1477,6 @@ function renderAttemptComparison(){
     wrap.innerHTML='';
     return
   }
-  // Группируем по testId
   var byTest={};
   my.forEach(function(r){
     if(!byTest[r.testId])byTest[r.testId]=[];
@@ -1630,7 +1691,6 @@ function buildResultDetailHTML(r,isAdmin){
         tOkOverall++;
         if((d.attempts||0)===1) tOkFirst++;
       } else if(d.adminCorrect===false){
-        // неверно
       } else {
         tPend++;
       }
@@ -2148,12 +2208,13 @@ function demoteUser(login){
   var u=CACHE.users.find(function(x){return x.login===login});if(!u)return;
   db.collection('users').doc(u._id).update({role:'user'}).then(function(){u.role='user';renderUsers()}).catch(function(e){alert('Ошибка: '+e.message)})
 }
-function resetUserPassword(login){
+async function resetUserPassword(login){
   var np=prompt('Новый пароль для «'+login+'»:','');
   if(np===null)return;
   if(np.length<4){alert('Слишком короткий');return}
   var u=CACHE.users.find(function(x){return x.login===login});if(!u)return;
-  db.collection('users').doc(u._id).update({passHash:hashPass(np)}).then(function(){u.passHash=hashPass(np);alert('Пароль изменён: '+np)}).catch(function(e){alert('Ошибка: '+e.message)})
+  var hash=await hashPass(np);
+  db.collection('users').doc(u._id).update({passHash:hash}).then(function(){u.passHash=hash;alert('Пароль изменён: '+np)}).catch(function(e){alert('Ошибка: '+e.message)})
 }
 function deleteUser(login){
   var u=CACHE.users.find(function(x){return x.login===login});if(!u)return;
@@ -2283,6 +2344,37 @@ function renderAccount(){
   }).join('')
 }
 
+/* === СМЕНА ПАРОЛЯ (async) === */
+function openChangePassModal(){
+  if(!currentUser||currentUser.role!=='admin'){alert('Только для администратора');return}
+  document.getElementById('chOldPass').value='';
+  document.getElementById('chNewPass').value='';
+  document.getElementById('chNewPass2').value='';
+  document.getElementById('chPassMsg').textContent='';
+  document.getElementById('changePassModal').classList.remove('hidden')
+}
+function closeChangePassModal(){document.getElementById('changePassModal').classList.add('hidden')}
+
+async function submitChangePass(){
+  var oldP=document.getElementById('chOldPass').value;
+  var newP=document.getElementById('chNewPass').value;
+  var newP2=document.getElementById('chNewPass2').value;
+  var msg=document.getElementById('chPassMsg');msg.textContent='';
+  if(currentUser.role!=='admin'){msg.textContent='Только для администратора';return}
+  var u=CACHE.users.find(function(x){return x.login===currentUser.login});
+  if(!u){msg.textContent='Пользователь не найден';return}
+
+  var ok=await verifyPass(oldP,u.passHash);
+  if(!ok){msg.textContent='Текущий пароль неверный';return}
+  if(newP.length<4){msg.textContent='Новый пароль — минимум 4 символа';return}
+  if(newP!==newP2){msg.textContent='Новые пароли не совпадают';return}
+
+  var hash=await hashPass(newP);
+  db.collection('users').doc(u._id).update({passHash:hash}).then(function(){
+    u.passHash=hash;closeChangePassModal();alert('Пароль изменён')
+  }).catch(function(e){msg.textContent='Ошибка: '+e.message})
+}
+
 /* === АВАТАР === */
 var avatarPendingData=null;
 
@@ -2380,7 +2472,6 @@ function deleteTest(id){
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }
 
-/* === НОВОЕ: Валидация === */
 function validateTest(t){
   var errors=[];
   var warnings=[];
@@ -2491,7 +2582,6 @@ function renderEditor(){
   }).join('')
 }
 
-/* === НОВОЕ: Перестановка вопросов === */
 function moveQ(qi,dir){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
@@ -2504,7 +2594,6 @@ function moveQ(qi,dir){
   renderEditor()
 }
 
-/* === ВАЛИДАЦИЯ ПЕРЕД СОХРАНЕНИЕМ === */
 function saveTestWithValidation(){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
