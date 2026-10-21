@@ -424,7 +424,12 @@ var firebaseConfig={
   appId:"1:1007097355508:web:a98bf4d3d4069fc21392a1"
 };
 firebase.initializeApp(firebaseConfig);
-firebase.appCheck().activate('6LdjGvotAAAAAB52xm3M2HpnCWfKRFqUgJju--S3');
+
+// Создаем провайдер Enterprise (как требует Firebase для новых проектов)
+var appCheckProvider = new firebase.appCheck.ReCaptchaEnterpriseProvider('6LdjGvotAAAAAB52xm3M2HpnCWfKRFqUgJju--S3');
+
+// Активируем с явным указанием провайдера
+firebase.appCheck().activate(appCheckProvider, true);
 var db=firebase.firestore();
 try{db.settings({ignoreUndefinedProperties:true, merge: true});}catch(e){}
 
