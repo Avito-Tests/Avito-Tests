@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<meta name="description" content="Платформа тестирования Авито">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="dns-prefetch" href="https://firebase.googleapis.com">
+<link rel="dns-prefetch" href="https://firebaselogging.googleapis.com">
 <title>Тесты Авито</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#38bdf8;--accent-hover:#0ea5e9;--ok:#4ade80;--fail:#f87171;--ok-bg:#14532d;--fail-bg:#7f1d1d;--warn-bg:#78350f;--warn:#fcd34d;--info-bg:#1e3a8a;--info:#93c5fd;--input-bg:#0f172a;--input-border:#475569;--surface:#0f172a;--header:#1e293b}
@@ -125,6 +131,37 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
 .access-row{display:flex;gap:16px;flex-wrap:wrap;padding:8px 0}
 .access-row label{display:flex;align-items:center;gap:6px;font-size:.9em;cursor:pointer}
 .access-row input[type=checkbox]{width:auto}
+/* === Плавность, доступность, полировка === */
+::selection{background:var(--accent);color:#0f172a}
+html{scroll-behavior:smooth}
+button{transition:background .15s,transform .06s,box-shadow .15s,border-color .15s}
+button:active:not(:disabled){transform:translateY(1px)}
+button:focus{outline:none}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(56,189,248,.18);outline:none}
+input,select,textarea{transition:border-color .15s,box-shadow .15s}
+.card{transition:box-shadow .2s}
+.test-card{transition:border-color .15s,transform .15s,box-shadow .2s}
+.test-card:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.option{transition:border-color .15s,background .15s,transform .08s}
+.option:active{transform:scale(.995)}
+.tab{transition:color .15s,border-color .15s}
+.tabs{position:sticky;top:0;background:var(--bg);padding-top:6px;z-index:100}
+.account-btn{transition:border-color .15s,background .15s}
+.modal-backdrop{animation:fadeIn .15s ease}
+.modal{animation:popIn .18s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.spinner{display:inline-block;width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-5px;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:var(--input-border)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-weight:600;font-size:.92em;z-index:1200;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:popIn .2s ease}
+.toast-ok{background:var(--ok-bg);color:var(--ok)}
+.toast-err{background:var(--fail-bg);color:var(--fail)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body><div id="authScreen" class="auth-container hidden">
@@ -359,8 +396,8 @@ input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--input-b
       <button onclick="saveImage()">Применить</button>
     </div>
   </div>
-</div><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</div><script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* === FIREBASE === */
 var firebaseConfig={
@@ -371,9 +408,21 @@ var firebaseConfig={
   messagingSenderId:"1007097355508",
   appId:"1:1007097355508:web:a98bf4d3d4069fc21392a1"
 };
-firebase.initializeApp(firebaseConfig);
-var db=firebase.firestore();
-try{db.settings({ignoreUndefinedProperties:true});}catch(e){}
+var db=null;
+function initFirebase(){
+  if(typeof firebase==='undefined'||!firebase.initializeApp){
+    document.body.innerHTML='<div style="padding:60px 40px;text-align:center;color:#f87171;font-family:system-ui">'+
+      '<h2>Не удалось загрузить Firebase SDK</h2>'+
+      '<p style="color:#94a3b8;max-width:520px;margin:0 auto 20px">Проверьте подключение к интернету — сервис gstatic.com может быть недоступен или заблокирован.</p>'+
+      '<button onclick="location.reload()" style="padding:10px 26px;background:#38bdf8;border:none;border-radius:8px;font-weight:700;cursor:pointer">🔄 Повторить</button></div>';
+    return false
+  }
+  firebase.initializeApp(firebaseConfig);
+  db=firebase.firestore();
+  try{db.settings({ignoreUndefinedProperties:true});}catch(e){}
+  try{if(db.enablePersistence)db.enablePersistence({synchronizeTabs:true}).catch(function(){})}catch(e){}
+  return true
+}
 
 var CACHE={users:[],tests:[],history:[]};
 
@@ -419,9 +468,10 @@ function showMsg(id,type,txt){
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function letterOf(i){return String.fromCharCode(65+i)}
 function showLoading(){
+  if(document.getElementById('loadBox'))return;
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('app').classList.add('hidden');
-  document.body.insertAdjacentHTML('afterbegin','<div id="loadBox" style="padding:60px;text-align:center;font-size:1.2em;color:var(--accent)">⏳ Загрузка...</div>')
+  document.body.insertAdjacentHTML('afterbegin','<div id="loadBox" style="padding:60px;text-align:center;font-size:1.2em;color:var(--accent)"><span class="spinner"></span>Загрузка...</div>')
 }
 function hideLoading(){
   var l=document.getElementById('loadBox');
@@ -491,15 +541,19 @@ function recalcCorrectCount(details){
 
 /* === ЗАГРУЗКА === */
 function loadAllData(){
-  return db.collection('users').get().then(function(snap){
-    CACHE.users=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
-    return db.collection('tests').get()
-  }).then(function(snap){
-    CACHE.tests=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
-    return db.collection('history').get()
-  }).then(function(snap){
-    CACHE.history=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())})
-  })
+  var load=Promise.all([
+    db.collection('users').get(),
+    db.collection('tests').get(),
+    db.collection('history').get()
+  ]).then(function(res){
+    CACHE.users=res[0].docs.map(function(d){return Object.assign({_id:d.id},d.data())});
+    CACHE.tests=res[1].docs.map(function(d){return Object.assign({_id:d.id},d.data())});
+    CACHE.history=res[2].docs.map(function(d){return Object.assign({_id:d.id},d.data())})
+  });
+  var watchdog=new Promise(function(_,rej){
+    setTimeout(function(){rej(new Error('База данных не отвечает более 25 секунд. Проверьте интернет-соединение.'))},25000)
+  });
+  return Promise.race([load,watchdog])
 }
 
 function ensureAdminAndDemos(){
@@ -601,7 +655,8 @@ function initApp(){
     document.body.innerHTML='<div style="padding:40px;text-align:center;color:#f87171;font-family:system-ui">'+
       '<h2>Ошибка подключения к Firebase</h2>'+
       '<p style="background:#7f1d1d;padding:14px;border-radius:8px;display:inline-block;text-align:left;max-width:600px">'+esc(e.message||e)+'</p>'+
-      '<p style="color:#94a3b8;font-size:.9em;margin-top:20px">Проверьте: Firestore создан, правила опубликованы.</p></div>';
+      '<p style="color:#94a3b8;font-size:.9em;margin-top:20px">Проверьте: Firestore создан, правила опубликованы.</p>'+
+      '<p><button onclick="location.reload()" style="padding:10px 26px;background:#38bdf8;border:none;border-radius:8px;font-weight:700;cursor:pointer">🔄 Повторить</button></p></div>';
   })
 }
 
@@ -668,7 +723,14 @@ function handleGuest(e){
   enterApp({login:fio,role:'guest',fio:fio,isGuest:true})
 }
 
-function logout(){setSession(null);currentUser=null;showAuthScreen()}function enterApp(u){
+function logout(){
+  setSession(null);currentUser=null;
+  stopTimer();activeTest=null;currentTest=null;finishing=false;
+  document.querySelectorAll('.modal-backdrop').forEach(function(m){m.classList.add('hidden')});
+  closeResultView();
+  showAuthScreen()
+}
+function enterApp(u){
   currentUser=u;
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
@@ -728,7 +790,7 @@ function updatePendingBadge(){
   if(el)el.textContent=cnt>0?'('+cnt+')':''
 }
 
-function backToTests(){currentTest=null;switchTab('tests')}
+function backToTests(){currentTest=null;if(typeof flushTestSave==='function')flushTestSave();switchTab('tests')}
 
 /* === СПИСОК ТЕСТОВ (с фильтрацией доступа) === */
 function renderTests(){
@@ -839,10 +901,16 @@ function clearDraft(testId){
 
 /* === ПРОХОЖДЕНИЕ === */
 var cur=0,chk=false,qStats=[],currentSel=[],started=0;
-var deadline=0,timerInterval=null;
+var deadline=0,timerInterval=null,finishing=false;
+var _draftTimer=null;
+function debouncedSaveDraft(){
+  if(_draftTimer)clearTimeout(_draftTimer);
+  _draftTimer=setTimeout(saveDraft,300)
+}
 
 function startTest(){
   if(!currentTest)return;
+  finishing=false;
   var draft=getDraft(currentTest._id);
 
   if(draft){
@@ -918,14 +986,18 @@ function startTimer(){
   box.className='timer';
   document.body.appendChild(box);
 
+  var lastShown=-1;
   function tick(){
     var now=Date.now();
     var left=Math.max(0,deadline-now);
     var sec=Math.floor(left/1000);
-    var m=Math.floor(sec/60);
-    var s=sec%60;
-    box.textContent='⏱️ '+m+':'+(s<10?'0':'')+s;
-    if(left<60000)box.classList.add('danger');
+    if(sec!==lastShown){
+      lastShown=sec;
+      var m=Math.floor(sec/60);
+      var s=sec%60;
+      box.textContent='⏱️ '+m+':'+(s<10?'0':'')+s;
+      if(left<60000)box.classList.add('danger');
+    }
     if(left<=0){
       clearInterval(timerInterval);timerInterval=null;
       box.textContent='⏱️ Время вышло!';
@@ -936,14 +1008,16 @@ function startTimer(){
     }
   }
   tick();
-  timerInterval=setInterval(tick,1000)
+  timerInterval=setInterval(tick,500)
 }
 
 function stopTimer(){
   if(timerInterval){clearInterval(timerInterval);timerInterval=null}
   var box=document.getElementById('timerBox');
   if(box)box.remove()
-}function renderQ(){
+}
+function renderQ(){
+  if(!activeTest||!activeTest.questions||!activeTest.questions[cur])return;
   chk=false;
   var q=activeTest.questions[cur];
   var sel=currentSel[cur];
@@ -957,7 +1031,7 @@ function stopTimer(){
   document.getElementById('questionText').innerHTML=esc(q.question||'(без текста)')+badge;
 
   var iw=document.getElementById('questionImageWrap');
-  iw.innerHTML=q.image&&q.image.trim()?'<img class="q-image" src="'+esc(q.image)+'" onerror="this.style.display=\'none\'">':'';
+  iw.innerHTML=q.image&&q.image.trim()?'<img class="q-image" loading="lazy" src="'+esc(q.image)+'" onerror="this.style.display=\'none\'">':'';
 
   var rb=document.getElementById('resultBox');
   rb.innerHTML='';rb.className='';
@@ -999,7 +1073,7 @@ function stopTimer(){
       inp.style.borderColor='var(--ok)';
       inp.style.background='var(--ok-bg)';
     } else {
-      inp.oninput=function(){currentSel[cur]=inp.value;saveDraft()};
+      inp.oninput=function(){currentSel[cur]=inp.value;debouncedSaveDraft()};
     }
     wrap.appendChild(inp);
     opts.appendChild(wrap)
@@ -1108,8 +1182,10 @@ function nextQuestion(){if(cur<activeTest.questions.length-1){cur++;saveDraft();
 function prevQuestion(){if(cur>0){cur--;saveDraft();renderQ()}}
 
 function finishTest(timeUp){
+  if(finishing)return;
+  finishing=true;
   stopTimer();
-  if(!activeTest){alert('Ошибка: тест не зафиксирован');return}
+  if(!activeTest){alert('Ошибка: тест не зафиксирован');finishing=false;return}
   if(timeUp)alert('⏱️ Время вышло! Тест завершён автоматически.');
 
   document.getElementById('testView').classList.add('hidden');
@@ -1177,11 +1253,11 @@ function finishTest(timeUp){
         '<div class="q-review-opt" style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn)">📝 Правильный ответ появится после проверки</div>'+
       '</div>'
     }
-    var imgHtml=q.image&&q.image.trim()?'<img class="q-image" src="'+esc(q.image)+'" style="max-height:200px" onerror="this.style.display=\'none\'">':'';
+    var imgHtml=q.image&&q.image.trim()?'<img class="q-image" loading="lazy" src="'+esc(q.image)+'" style="max-height:200px" onerror="this.style.display=\'none\'">':'';
     var hasExpl=(q.explanation&&q.explanation.trim())||(q.explanationImage&&q.explanationImage.trim());
     var explHtml=hasExpl?'<div class="explanation"><div class="explanation-title">💡 Почему так</div>'+
       (q.explanation?'<div>'+esc(q.explanation)+'</div>':'')+
-      (q.explanationImage?'<img class="explanation-image" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
+      (q.explanationImage?'<img class="explanation-image" loading="lazy" src="'+esc(q.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
     '</div>':'';
     var tb=qtype==='text'?' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:var(--warn-bg);color:var(--warn)">✍️</span>':' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:var(--info-bg);color:var(--info)">📋</span>';
     return '<div class="q-review"><div class="q-review-title">'+(i+1)+'. '+esc(q.question||'')+tb+'</div>'+imgHtml+contentHtml+explHtml+'</div>'
@@ -1213,7 +1289,8 @@ function finishTest(timeUp){
     console.log('✓ Результат сохранён:',activeTest.name,'| с 1-й попытки',correctCount,'| порог',passCount);
   }).catch(function(e){
     console.error('Ошибка сохранения:',e);
-    alert('Результат не сохранён: '+e.message)
+    finishing=false;
+    alert('Результат не сохранён: '+e.message+'\n\nПроверьте соединение и нажмите «Показать результаты» ещё раз.')
   })
 }/* === МОИ РЕЗУЛЬТАТЫ === */
 function renderMyResults(){
@@ -1308,7 +1385,7 @@ function renderPending(){
           '<button class="small danger" onclick="deleteOneResult(\''+r._id+'\')">🗑</button>'+
         '</div>'+
       '</div>'+
-      '<div id="pdet_'+r._id+'" class="'+hiddenClass+' history-detail"><div id="pendRes_'+r._id+'">'+buildResultDetailHTML(r,true)+'</div></div>'+
+      '<div id="pdet_'+r._id+'" class="'+hiddenClass+' history-detail"><div id="pendRes_'+r._id+'">'+(_openPendingIds[r._id]?buildResultDetailHTML(r,true):'')+'</div></div>'+
     '</div>'
   }).join('')
 }
@@ -1316,6 +1393,11 @@ function renderPending(){
 function togglePendingResult(id){
   var d=document.getElementById('pdet_'+id);
   if(!d)return;
+  if(d.classList.contains('hidden')){
+    var box=document.getElementById('pendRes_'+id);
+    var r=CACHE.history.find(function(x){return x._id===id});
+    if(box&&r&&!box.innerHTML)box.innerHTML=buildResultDetailHTML(r,true);
+  }
   d.classList.toggle('hidden');
   _openPendingIds[id]=!d.classList.contains('hidden')
 }
@@ -1377,14 +1459,20 @@ function renderResults(){
           '<button class="small danger" onclick="deleteOneResult(\''+r._id+'\')">🗑</button>'+
         '</div>'+
       '</div>'+
-      '<div id="adet_'+r._id+'" class="hidden history-detail"><div id="adminRes_'+r._id+'">'+buildResultDetailHTML(r,true)+'</div></div>'+
+      '<div id="adet_'+r._id+'" class="hidden history-detail"><div id="adminRes_'+r._id+'"></div></div>'+
     '</div>'
   }).join('')
 }
 
 function toggleAdminResult(id){
   var d=document.getElementById('adet_'+id);
-  if(d)d.classList.toggle('hidden')
+  if(!d)return;
+  if(d.classList.contains('hidden')){
+    var box=document.getElementById('adminRes_'+id);
+    var r=CACHE.history.find(function(x){return x._id===id});
+    if(box&&r&&!box.innerHTML)box.innerHTML=buildResultDetailHTML(r,true);
+  }
+  d.classList.toggle('hidden')
 }
 
 /* === УДАЛЕНИЕ === */
@@ -1480,11 +1568,11 @@ function buildResultDetailHTML(r,isAdmin){
         '<div style="margin-top:8px">'+mark+'</div>'+btns+
       '</div>'
     }
-    var imgHtml=d.image&&d.image.trim()?'<img class="q-image" src="'+esc(d.image)+'" style="max-height:180px" onerror="this.style.display=\'none\'">':'';
+    var imgHtml=d.image&&d.image.trim()?'<img class="q-image" loading="lazy" src="'+esc(d.image)+'" style="max-height:180px" onerror="this.style.display=\'none\'">':'';
     var hasExpl=(d.explanation&&d.explanation.trim())||(d.explanationImage&&d.explanationImage.trim());
     var explHtml=hasExpl?'<div class="explanation"><div class="explanation-title">💡 Почему так</div>'+
       (d.explanation?'<div>'+esc(d.explanation)+'</div>':'')+
-      (d.explanationImage?'<img class="explanation-image" src="'+esc(d.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
+      (d.explanationImage?'<img class="explanation-image" loading="lazy" src="'+esc(d.explanationImage)+'" onerror="this.style.display=\'none\'">':'')+
     '</div>':'';
     var tb=qtype==='text'?' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:var(--warn-bg);color:var(--warn)">✍️</span>':' <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;background:var(--info-bg);color:var(--info)">📋</span>';
     return '<div class="q-review"><div class="q-review-title">'+(i+1)+'. '+esc(d.question||'')+tb+'</div>'+imgHtml+contentHtml+explHtml+'</div>'
@@ -1999,11 +2087,21 @@ function renderEditor(){
   }).join('')
 }
 
+var _saveTestTimer=null,_saveTestPending=null,_saveTestDocId=null;
 function saveTestField(updates){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
   if(!t)return;
   Object.assign(t,updates);
-  db.collection('tests').doc(editTestId).update(cleanForFirestore(updates)).catch(function(e){alert('Ошибка: '+e.message)})
+  _saveTestPending=Object.assign(_saveTestPending||{},updates);
+  _saveTestDocId=editTestId;
+  if(_saveTestTimer)clearTimeout(_saveTestTimer);
+  _saveTestTimer=setTimeout(flushTestSave,600)
+}
+function flushTestSave(){
+  if(!_saveTestPending||!_saveTestDocId)return;
+  var docId=_saveTestDocId,upd=_saveTestPending;
+  _saveTestPending=null;_saveTestTimer=null;
+  db.collection('tests').doc(docId).update(cleanForFirestore(upd)).catch(function(e){alert('Ошибка сохранения: '+e.message)})
 }
 function updateTestName(v){
   var t=CACHE.tests.find(function(x){return x._id===editTestId});
@@ -2272,8 +2370,38 @@ function fallbackCopy(text,label){
   document.body.removeChild(ta)
 }
 
+/* === ESC ЗАКРЫВАЕТ МОДАЛКИ === */
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  closeResultView();
+  ['datesStatsModal','changePassModal','avatarModal','imageModal'].forEach(function(id){
+    var m=document.getElementById(id);
+    if(m&&!m.classList.contains('hidden'))m.classList.add('hidden')
+  })
+});
+
+/* === ИНДИКАТОР СЕТИ === */
+function updateNetStatus(){
+  var b=document.getElementById('netBanner');
+  if(navigator.onLine){
+    if(b)b.remove()
+  } else if(!b){
+    document.body.insertAdjacentHTML('beforeend','<div id="netBanner" class="toast toast-err">⚠️ Нет соединения — изменения могут не сохраниться</div>')
+  }
+}
+window.addEventListener('online',updateNetStatus);
+window.addEventListener('offline',updateNetStatus);
+
 /* === СТАРТ === */
-initApp();
+function boot(){
+  if(!initFirebase())return;
+  initApp()
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',boot)
+} else {
+  boot()
+}
 </script>
 </body>
 </html>
