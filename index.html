@@ -7,7 +7,8 @@
 <style>
 :root{--bg:#0b1220;--card:#151e2f;--card2:#1c2740;--text:#e8eefc;--muted:#8fa0bf;--border:#2b3956;--accent:#4aa8ff;--accent-hover:#2f8fe8;--ok:#42d392;--fail:#ff6b6b;--ok-bg:#0f3d2e;--fail-bg:#4a1d1d;--warn-bg:#3d2f0f;--warn:#f5c04a;--info-bg:#122c4d;--info:#8fc2ff;--input-bg:#0f1a2b;--input-border:#324062;--surface:#0f1a2b;--header:#1c2740;--shadow:0 4px 18px rgba(0,0,0,.35);--radius:14px}
 *{box-sizing:border-box}
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:960px;margin:0 auto;padding:24px 18px 60px;background:radial-gradient(1200px 600px at 50% -10%,#16233b 0%,#0b1220 60%);color:var(--text);min-height:100vh}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:960px;margin:0 auto;padding:24px 18px 60px;background:radial-gradient(1200px 600px at 50% -10%,#16233b 0%,#0b1220 60%);color:var(--text);min-height:100vh;position:relative}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%234aa8ff' stop-opacity='0.10'/><stop offset='1' stop-color='%2342d392' stop-opacity='0.06'/></linearGradient></defs><text x='50%' y='50%' font-family='system-ui,Arial,sans-serif' font-size='200' font-weight='900' fill='url(%23g)' text-anchor='middle' dominant-baseline='middle' letter-spacing='16'>ДКС АВИТО</text></svg>");background-repeat:no-repeat;background-position:center center;background-size:80% auto;background-attachment:fixed;opacity:.55}
 h1{font-size:1.5em;margin:0 0 6px;letter-spacing:-.01em}
 h2{font-size:1.15em;margin:0 0 14px;letter-spacing:-.01em}
 h3{font-size:1.02em;margin:20px 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
@@ -718,7 +719,6 @@ function switchTab(name){
   if(adminOnly.indexOf(name)!==-1&&(!currentUser||currentUser.role!=='admin'))name='tests';
   if(name==='myresults'&&currentUser&&currentUser.role==='admin')name='tests';
 
-  // На профиле и в редакторе скрываем верхние табы
   var mainTabs=document.getElementById('mainTabs');
   var hideTabs=(name==='account'||name==='editor');
   if(mainTabs)mainTabs.classList.toggle('hidden',hideTabs);
@@ -1591,7 +1591,6 @@ function renderDatesTab(){
   }).join('');
   currentDatesTestId=selTest.value;
 
-  // Пользователи из истории по выбранному тесту
   var baseResults=CACHE.history.filter(function(r){
     if(currentDatesTestId && r.testId!==currentDatesTestId)return false;
     return true
@@ -1631,15 +1630,23 @@ function renderDatesTab(){
 
   pickerWrap.classList.remove('hidden');
   var prevDay=picker.value;
-  picker.innerHTML=days.map(function(d){
+  var options='<option value="__ALL__">— Все даты —</option>';
+  options+=days.map(function(d){
     var cnt=groups[d].length;
     return '<option value="'+esc(d).replace(/"/g,'&quot;')+'">'+esc(d)+' ('+cnt+')</option>'
   }).join('');
-  if(prevDay&&days.indexOf(prevDay)!==-1)picker.value=prevDay;
-  else picker.value=days[0];
+  picker.innerHTML=options;
+  if(prevDay && (prevDay==='__ALL__' || days.indexOf(prevDay)!==-1)) picker.value=prevDay;
+  else picker.value='__ALL__';
 
   var selectedDay=picker.value;
-  if(!selectedDay||!groups[selectedDay]){content.innerHTML='<div class="empty-state">Нет данных</div>';return}
+
+  if(selectedDay==='__ALL__'){
+    content.innerHTML=buildAllDatesTable(days,groups);
+    return
+  }
+
+  if(!groups[selectedDay]){content.innerHTML='<div class="empty-state">Нет данных</div>';return}
 
   var rows=groups[selectedDay].slice().sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0)});
   var total=rows.length;
@@ -1657,8 +1664,37 @@ function renderDatesTab(){
   html+='<div style="background:var(--header);padding:12px 16px">'+
     '<b style="font-size:1.05em">'+esc(selectedDay)+'</b> <span style="color:var(--muted);font-size:.85em">• прохождений: '+total+' • проверено: '+checked+(pending>0?' • ⏳ '+pending:'')+' • средний % с 1-й: '+avgPct+'%</span>'+
   '</div>';
+  html+=buildRowsTable(rows);
+  html+='</div>';
+  content.innerHTML=html
+}
 
-  html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.88em"><thead><tr style="background:var(--surface);text-align:left">'+
+function buildAllDatesTable(days,groups){
+  var html='';
+  days.forEach(function(day){
+    var rows=groups[day].slice().sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0)});
+    var total=rows.length;
+    var checked=rows.filter(function(r){return r.checkStatus==='checked'}).length;
+    var pending=total-checked;
+    var sumPct=0;
+    rows.forEach(function(r){
+      var c=0;
+      (r.details||[]).forEach(function(d){if(isCorrectFirstTry(d))c++});
+      sumPct+=r.questions?c/r.questions*100:0;
+    });
+    var avgPct=total?Math.round(sumPct/total):0;
+    html+='<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">';
+    html+='<div style="background:var(--header);padding:12px 16px">'+
+      '<b style="font-size:1.05em">'+esc(day)+'</b> <span style="color:var(--muted);font-size:.85em">• прохождений: '+total+' • проверено: '+checked+(pending>0?' • ⏳ '+pending:'')+' • средний % с 1-й: '+avgPct+'%</span>'+
+    '</div>';
+    html+=buildRowsTable(rows);
+    html+='</div>'
+  });
+  return html
+}
+
+function buildRowsTable(rows){
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.88em"><thead><tr style="background:var(--surface);text-align:left">'+
     '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Время</th>'+
     '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Тест</th>'+
     '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Пользователь</th>'+
@@ -1700,8 +1736,8 @@ function renderDatesTab(){
       '<td style="padding:8px;border-bottom:1px solid var(--border)">'+statusTxt+'</td>'+
     '</tr>'
   });
-  html+='</tbody></table></div></div>';
-  content.innerHTML=html
+  html+='</tbody></table></div>';
+  return html
 }
 
 function buildDayTSV(day,testId,userFilter){
@@ -1736,6 +1772,7 @@ function buildDayTSV(day,testId,userFilter){
 function copySelectedDate(){
   var picker=document.getElementById('datePicker');
   if(!picker||!picker.value){alert('Выберите дату');return}
+  if(picker.value==='__ALL__'){copyAllDates();return}
   var text=buildDayTSV(picker.value,currentDatesTestId,currentDatesUser);
   if(text.split('\n').length<=1){alert('На эту дату нет результатов');return}
   copyToClipboard(text,picker.value)
