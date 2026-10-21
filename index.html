@@ -263,8 +263,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
   <div id="tab-dates" class="hidden">
     <div class="card">
       <h2>📅 Результаты по датам</h2>
-      <p style="color:var(--muted);font-size:.9em;margin-bottom:14px">Выберите тест и дату — увидите результаты только за этот день.</p>
-      <div class="form-row" style="max-width:400px"><label>Тест:</label><select id="datesTestFilter" onchange="renderDatesTab()"></select></div>
+      <p style="color:var(--muted);font-size:.9em;margin-bottom:14px">Выберите тест (или «Все») и пользователя (или «Все») — увидите результаты за выбранный день.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-row" style="margin:0"><label>Тест:</label><select id="datesTestFilter" onchange="renderDatesTab()"></select></div>
+        <div class="form-row" style="margin:0"><label>Пользователь:</label><select id="datesUserFilter" onchange="renderDatesTab()"></select></div>
+      </div>
       <div id="datePickerWrap" class="dates-picker hidden">
         <label>Дата:</label>
         <select id="datePicker" onchange="renderDatesTab()"></select>
@@ -1568,38 +1571,50 @@ function markTextAnswer(resultId,questionIdx,value){
     }
   }).catch(function(e){alert('Ошибка: '+e.message)})
 }/* === РЕЗУЛЬТАТЫ ПО ДАТАМ (отдельная вкладка) === */
-var currentDatesTestId=null;
+var currentDatesTestId='';
+var currentDatesUser='';
+
+function getDatesFilteredResults(){
+  return CACHE.history.filter(function(r){
+    if(currentDatesTestId && r.testId!==currentDatesTestId)return false;
+    if(currentDatesUser && r.user!==currentDatesUser)return false;
+    return true
+  })
+}
 
 function renderDatesTab(){
   var tests=getTests();
-  var sel=document.getElementById('datesTestFilter');
+  var selTest=document.getElementById('datesTestFilter');
+  var prevTest=selTest.value;
+  selTest.innerHTML='<option value="">— Все тесты —</option>'+tests.map(function(t){
+    return '<option value="'+t._id+'"'+(t._id===prevTest?' selected':'')+'>'+esc(t.name)+'</option>'
+  }).join('');
+  currentDatesTestId=selTest.value;
+
+  // Пользователи из истории по выбранному тесту
+  var baseResults=CACHE.history.filter(function(r){
+    if(currentDatesTestId && r.testId!==currentDatesTestId)return false;
+    return true
+  });
+  var selUser=document.getElementById('datesUserFilter');
+  var prevUser=selUser.value;
+  var users=[];
+  baseResults.forEach(function(r){if(r.user&&users.indexOf(r.user)===-1)users.push(r.user)});
+  users.sort();
+  selUser.innerHTML='<option value="">— Все —</option>'+users.map(function(u){
+    return '<option value="'+esc(u)+'"'+(u===prevUser?' selected':'')+'>'+esc(u)+'</option>'
+  }).join('');
+  if(prevUser && users.indexOf(prevUser)!==-1) selUser.value=prevUser;
+  currentDatesUser=selUser.value;
+
   var pickerWrap=document.getElementById('datePickerWrap');
   var picker=document.getElementById('datePicker');
   var content=document.getElementById('datesContent');
 
-  var prev=sel.value;
-  sel.innerHTML='<option value="">— выберите тест —</option>'+tests.map(function(t){
-    return '<option value="'+t._id+'"'+(t._id===prev?' selected':'')+'>'+esc(t.name)+'</option>'
-  }).join('');
-  if(!prev&&tests.length){sel.value=tests[0]._id}
-  currentDatesTestId=sel.value;
-
-  if(!currentDatesTestId){
-    pickerWrap.classList.add('hidden');
-    content.innerHTML='<div class="empty-state">Выберите тест</div>';
-    return
-  }
-
-  var t=CACHE.tests.find(function(x){return x._id===currentDatesTestId});
-  if(!t){
-    pickerWrap.classList.add('hidden');
-    content.innerHTML='<div class="empty-state">Тест не найден</div>';return
-  }
-
-  var results=CACHE.history.filter(function(r){return r.testId===currentDatesTestId});
+  var results=getDatesFilteredResults();
   if(!results.length){
     pickerWrap.classList.add('hidden');
-    content.innerHTML='<div class="empty-state">📭 По этому тесту пока нет результатов</div>';return
+    content.innerHTML='<div class="empty-state">📭 По выбранным фильтрам результатов нет</div>';return
   }
 
   var groups={};
@@ -1645,6 +1660,7 @@ function renderDatesTab(){
 
   html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.88em"><thead><tr style="background:var(--surface);text-align:left">'+
     '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Время</th>'+
+    '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Тест</th>'+
     '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Пользователь</th>'+
     '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Роль</th>'+
     '<th style="padding:10px 8px;border-bottom:1px solid var(--border)">Верных</th>'+
@@ -1673,6 +1689,7 @@ function renderDatesTab(){
     var statusTxt=r.checkStatus==='pending'?'⏳ На проверке':'✓ Проверено';
     html+='<tr>'+
       '<td style="padding:8px;border-bottom:1px solid var(--border)">'+esc(time)+'</td>'+
+      '<td style="padding:8px;border-bottom:1px solid var(--border);font-size:.92em">'+esc(r.testName||'—')+'</td>'+
       '<td style="padding:8px;border-bottom:1px solid var(--border)">'+esc(who)+'</td>'+
       '<td style="padding:8px;border-bottom:1px solid var(--border)">'+roleTxt+'</td>'+
       '<td style="padding:8px;border-bottom:1px solid var(--border)"><b>'+firstCorrect+'</b></td>'+
@@ -1687,13 +1704,16 @@ function renderDatesTab(){
   content.innerHTML=html
 }
 
-function buildDayTSV(day,testId){
+function buildDayTSV(day,testId,userFilter){
   var rows=CACHE.history.filter(function(r){
-    return r.testId===testId && (r.date||'').split(',')[0].trim()===day
+    if((r.date||'').split(',')[0].trim()!==day)return false;
+    if(testId && r.testId!==testId)return false;
+    if(userFilter && r.user!==userFilter)return false;
+    return true
   }).sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0)});
 
   var lines=[];
-  lines.push(['Дата','Время','Пользователь','Верных','Всего','Процент','Неверных','Неверных попыток'].join('\t'));
+  lines.push(['Дата','Время','Тест','Пользователь','Верных','Всего','Процент','Неверных','Неверных попыток'].join('\t'));
   rows.forEach(function(r){
     var firstCorrect=0,wrongCount=0,wrongAttempts=0;
     (r.details||[]).forEach(function(d){
@@ -1708,7 +1728,7 @@ function buildDayTSV(day,testId){
     var pct=r.questions?Math.round(firstCorrect/r.questions*100):0;
     var time=(r.date||'').split(',').slice(1).join(',').trim()||'';
     var who=r.userRole==='guest'?(r.fio||r.user):r.user;
-    lines.push([day,time,who,firstCorrect,r.questions||0,pct+'%',wrongCount,wrongAttempts].join('\t'))
+    lines.push([day,time,r.testName||'—',who,firstCorrect,r.questions||0,pct+'%',wrongCount,wrongAttempts].join('\t'))
   });
   return lines.join('\n')
 }
@@ -1716,21 +1736,17 @@ function buildDayTSV(day,testId){
 function copySelectedDate(){
   var picker=document.getElementById('datePicker');
   if(!picker||!picker.value){alert('Выберите дату');return}
-  if(!currentDatesTestId){alert('Выберите тест');return}
-  var text=buildDayTSV(picker.value,currentDatesTestId);
+  var text=buildDayTSV(picker.value,currentDatesTestId,currentDatesUser);
   if(text.split('\n').length<=1){alert('На эту дату нет результатов');return}
   copyToClipboard(text,picker.value)
 }
 
 function copyAllDates(){
-  if(!currentDatesTestId){alert('Выберите тест');return}
-  var t=CACHE.tests.find(function(x){return x._id===currentDatesTestId});
-  if(!t)return;
-  var rows=CACHE.history.filter(function(r){return r.testId===t._id})
+  var rows=getDatesFilteredResults()
     .sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0)});
   if(!rows.length){alert('Нет результатов');return}
   var lines=[];
-  lines.push(['Дата','Время','Пользователь','Верных','Всего','Процент','Неверных','Неверных попыток'].join('\t'));
+  lines.push(['Дата','Время','Тест','Пользователь','Верных','Всего','Процент','Неверных','Неверных попыток'].join('\t'));
   rows.forEach(function(r){
     var firstCorrect=0,wrongCount=0,wrongAttempts=0;
     (r.details||[]).forEach(function(d){
@@ -1747,7 +1763,7 @@ function copyAllDates(){
     var day=parts[0]?parts[0].trim():'—';
     var time=parts.slice(1).join(',').trim()||'';
     var who=r.userRole==='guest'?(r.fio||r.user):r.user;
-    lines.push([day,time,who,firstCorrect,r.questions||0,pct+'%',wrongCount,wrongAttempts].join('\t'))
+    lines.push([day,time,r.testName||'—',who,firstCorrect,r.questions||0,pct+'%',wrongCount,wrongAttempts].join('\t'))
   });
   copyToClipboard(lines.join('\n'),'все дни')
 }
