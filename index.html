@@ -425,10 +425,10 @@ var firebaseConfig={
 };
 firebase.initializeApp(firebaseConfig);
 
-// Создаем провайдер Enterprise (как требует Firebase для новых проектов)
-var appCheckProvider = new firebase.appCheck.ReCaptchaEnterpriseProvider('6LdjGvotAAAAAB52xm3M2HpnCWfKRFqUgJju--S3');
+// Создаем провайдер reCAPTCHA v3
+var appCheckProvider = new firebase.appCheck.ReCaptchaV3Provider('6Lf3RPotAAAAAK8kVg4K6xBGMBRtLBY10sio2uS7');
 
-// Активируем с явным указанием провайдера
+// Активируем
 firebase.appCheck().activate(appCheckProvider, true);
 var db=firebase.firestore();
 try{db.settings({ignoreUndefinedProperties:true, merge: true});}catch(e){}
