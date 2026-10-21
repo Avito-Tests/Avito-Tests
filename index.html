@@ -653,11 +653,12 @@ function subscribeToHistory(){
 }
 
 function subscribeToTestsAndUsers(){
-  db.collection('tests').onSnapshot(function(snap){
-    CACHE.tests=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
-    var activeTab=document.querySelector('.tab.active');
-    if(activeTab&&activeTab.dataset.tab==='tests')renderTests();
-  },function(error){console.warn('Ошибка подписки tests:',error)});
+db.collection('tests').onSnapshot(function(snap){
+  CACHE.tests=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
+  if(!currentUser)return; // <-- Добавлена проверка
+  var activeTab=document.querySelector('.tab.active');
+  if(activeTab&&activeTab.dataset.tab==='tests')renderTests();
+},function(error){console.warn('Ошибка подписки tests:',error)});
 
   db.collection('users').onSnapshot(function(snap){
     CACHE.users=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data())});
