@@ -410,7 +410,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
       <button onclick="saveImage()">Применить</button>
     </div>
   </div>
-</div><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+</div><script>
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+</script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
